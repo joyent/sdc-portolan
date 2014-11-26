@@ -51,7 +51,7 @@ This table maps MAC addresses to IPs, as well as CN IDs to the MACs on that
 system.
 
    field        |   type    | Index? | Description
-----------------+-----------+--------+-----------------------
+----------------|-----------|--------|-----------------------
 mac             | MAC addr  | yes    | MAC address
 ip              | IP addr   | yes    | IP address
 cn_id           | UUID      | yes    | CN this MAC resides on
@@ -78,7 +78,7 @@ This table maps CN UUIDs to the IPs port that their underlay.  This data changes
 decommissioned), so we can cache the bejesus out of this in memory.
 
    field    |   type    | Index? | Description
-------------+-----------+--------+-----------------------
+------------|-----------|--------|-----------------------
 cn_id       | UUID      | yes    | CN this MAC resides on
 ip          | IP addr   | yes    | IP address
 port        | port      | yes    | IP address
@@ -94,7 +94,7 @@ example).
 This holds log events for the various CNs.
 
    field    |   type    | Index? | Description
-------------+-----------+--------+-----------------------
+------------|-----------|--------|-----------------------
 cn_id       | UUID      | yes    | CN this MAC resides on
 vid         | UUID      | yes    | vnet ID
 record      | JSON      |        | log record to be pulled onto the CN
@@ -112,7 +112,7 @@ for these networks.  This metadata is necessary for provisioning and updating
 VMs on networks, but not for lookups.
 
    field     |   type    | Index? | Description
--------------+-----------+--------+-----------------------
+-------------|-----------|--------|-----------------------
 vid          | UUID      | yes    | vnet ID
 name         | string    |        | network name / description
 owner_uuid   | UUID      | yes    | network owner
