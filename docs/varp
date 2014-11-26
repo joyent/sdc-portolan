@@ -1,0 +1,691 @@
+Terminology
+-----------
+
+   + VL3
+
+	A guest VM Layer 3 address (usually IP or IPv6). This address is
+	on an overlay network and private to that customer. This address
+	replaces the address that is currently on the common 'Internal'
+	network.
+
+   + VL2
+
+	A guest MAC address that is on an overlay network.
+
+   + UL3
+
+	This is an underlay layer 3 address. Every CN has one of these.
+	This is the address that encapsulated packets are sent to and
+	from. The UL3 network is one which no one should be able to
+	access.
+
+To evaluate how we should design the way that a given CN interfaces with
+our centralized network store, the first question to ask is about what
+transformations can occur that we need to worry about:
+
+   o A NIC is created and associated with a VM (also covers VM create)
+   o A NIC is deleted and unassociated with a VM (also covers VM delete)
+   o A VM is migrated from one physical instance to another (keeping its
+     NICs)
+   o An IP address is added to a NIC
+   o An IP address is removed from a NIC
+   o An IP Address is moved (model as remove and add)
+
+The first three items are effectively similar. Any creation that has
+happened may have been proceeded by a deletion, or multiple thereof.
+Thus, we can't assume that it's the case that the world doesn't know
+about the entry. We should also better protect ourselves by always
+clearing state when something is created. Importantly, this is not the
+most common event, so it seems alright, though not great. The above
+rules suggest that for the first set of these, we have a simple rule to
+satisfy ourselves:
+
+   o Whenever a NIC is manipulated either by creating it, destroying it,
+     or moving it, a shoot down must be injected into everyone.
+
+Now, IP addresses get much trickier. If an IP address first appears,
+having never been used before, then normal ARP processes will find it.
+If that same IP disappears and is not reused, then it will eventually be
+dropped from all of the ARP tables. This also holds for IPv6 and NDP.
+For the rest of this discussion, well continue to refer to both of these
+when saying ARP, unless we need to call out NDP. In many ways, this is
+fine, because, for example, if a host panicked or a network partition,
+it would become an unreachable entry in the ARP table and that would be
+that. Now, when an IP address is reused before that standard ARP
+timeout, things get a bit trickier. This means that the world has a bit
+of a split brain.  While normally this is solved by broadcasting a
+gratuitous ARP, we don't have a simple means of enabling or creating
+that.
+
+Really what we need is a way to let systems know that this has been
+deleted, similar to a shoot down in the MAC address case. However, we
+don't have direct access to the ARP queries in the system, therefore, we
+have to be a bit more creative. The only thing we can do is inject a
+gratuitous ARP into the system and hope that the guest asks about it
+again at some point.
+
+While there is apparently an RFC for UnARP, we don't implement it
+really, and probably that's the case for others as well (though having
+not read the RFC it's hard to make that claim right now). Let's assume
+that the use of UnARP is basically not tenable.  This leaves us with a
+couple of options, none of which are great:
+
+   o Forbid IP reuse without letting some amount of time pass that would
+     be on the order of 10s of minutes to hours.
+
+   o On IP reuse, create the equivalent of a gratuitous ARP and send
+     that to everything on the subnet.
+
+   o Restrict the reuse of an IP address to the same MAC address it had
+     earlier. This may even be something that makes sense for IPv6,
+     though that I'm not completely certain of either.
+
+   o Always lie about the mac address and rewrite it as part of some
+     other operation while sending in the kernel data path.
+
+If we assume that we're doing some kind of gratuitous ARP, that adds a
+few other gotchas to how we do this. The first is that we can't just
+inject it into the overlay device with a broadcast MAC address, even if
+constrained to a specific VLAN. The problem is that we could easily have
+multiple different subnets on the same overlay device, and if you're
+doing an ARP for 10.1.2.3/24, a VM on 10.5.6.7/24 shouldn't see it. This
+means that one constraint we have is:
+
+   o Gratuitous ARPs must be sent targeting a specific MAC address.
+
+We need to ensure that it eventually gets injected, therefore we should
+send these reliably to varpd in a similar fashion to the shoot down
+queue. Importantly, because losing this would be problematic, we can't
+take the approach of say, having NAPI encap and send the packet, because
+in the event where the network has to drop that encaped UDP packet, we
+end up in a sad world.
+
+Therefore, the conclusion for IP addresses is twofold:
+
+   o Research if we have some kind of way that we can basically
+     UnARP/UnNDP (See RFC 1868)
+
+   o We need to send gratuitous ARPs to every VM on that IP address
+     subnet.
+
+
+Now, this also leaves us some other questions. Let's assume that we have
+a network partition during all of these operations. Further, let's
+assume that the network partition happens where we can reach every CN's
+underlay network, but we cannot reach the administrative network. In
+this case, we're only concerned with our metadata. If we have a
+partition such that data can't reach a specific node, then there isn't
+very much that we can do.
+
+  + Existing VL2 knowledge
+
+	In this case, we'll keep going, because nothing will cause us to
+	lose this information, unless an administrator manually
+	intervenes at this time, in which it devolves into the NIC
+	creation case.
+
+  + Existing VL3 knowledge
+
+	In this case, we'll keep going until the guest does an ARP
+	probe. In this case, this leaves us in bad shape, as we'll not
+	be able to reply to that and the ARP entry will be removed.
+	Therefore we need to consider taking some of action to cache
+	this information when this happens. This case is subtly
+	different from the case of new VL3 information. As, it's
+	possible that we could have known about it.
+
+  + NIC creation
+
+	In the face of NIC creation, there's not much we can do, because
+	we won't be able to get access to the new information. However,
+	extent VL2 information will work just fine.
+
+  + NIC deletion
+
+	If a NIC is deleted when this happens, this isn't so bad. We'll
+	send data to the old CN until ARP times out. If the NIC isn't
+	being reused right away, then this isn't so bad. If it is, well,
+	we have more work cut out for us. In addition, one thing that we
+	can do here is to have the underly network basically be able to
+	generate a quick UDP ICMP-esque error. This will cause us to at
+	least be able to remove the address, and end up in the NIC
+	creation case.
+
+  + MAC moved
+
+	If a NIC is moved, but we don't get the shoot down, then we are
+	effectively in the NIC deletion case, where we need to get
+	deletion information, which will then become the NIC creation
+	case. Because it's just a move and not a reassignment of a VL3
+	address, the failure mode isn't so bad, we're not risking
+	sending customer traffic to another of their VMs that shouldn't
+	get it, and because the MAC address can only exist on one VM at
+	a time, we know that if it's moved, the message will get
+	dropped.
+
+  + IP Added (not reused)
+
+	If a VL3 address has been added somewhere in the system that we
+	have never seen before, then we'll not be able to answer the ARP
+	level queries for it, so it will be a network partition for the
+	customer.
+
+  + IP removed
+
+	If a VL3 address has been removed from the system, then there's
+	nothing for us to really do. In this case, we'll behave like a
+	traditional L3 IP network, we'll continue to send traffic to the
+	target CN that will get dropped. It will reach the VM, until we
+	do another ARP probe. Because we are partitioned, we may not
+	have an IP address shoot down occur (see later section on new
+	cache ideas) and therefore will answer with the same ARP
+	information. While unideal, it's not terribly different from a
+	machine bringing down an IP interface, but still being
+	reachable from a L2 perspective.
+
+   + IP added (reused)
+
+	If an IP has been added, which has been recently used we enter
+	into an unfortunate series of issues. First off, we have to
+	consider that we have cached VL3 -> VL2 mappings (eg. ARP and
+	NDP). The old VL2 address may still be in use and therefore we
+	can't simply count on the act of hitting the wrong host to be
+	sufficient here. Further, if we send something to the cached VL2
+	address, we could be violating the customers general
+	expectations of how this world should fit together. eg. the old
+	VL2 address was for a MAC on network 10.1.2.0/24, but now could
+	be on an entirely different VL3 networks. While the guest will
+	likely drop said traffic, this creates a window of
+	vulnerability.
+
+   + IP moved
+
+	When an IP address is moved to a different MAC address, we end
+	up with what is effectively the case of an IP being removed and
+	then the IP being added in the reused case above. One reaction
+	may be to say, well, maybe we shouldn't allow IP reuse, but that
+	is also something that's going to lead to a lot of customer
+	complaints. For example, consider the case that you have a small
+	network like a /28 for some load balancer shenanigans, not
+	allowing reuse, for example, because you're upgrading an
+	instance, is somewhat silly. However, because it feels obvious
+	that we need to support IP reuse, because IP movement is a
+	special case or reuse, well, that's that.
+
+
+General thoughts on caching, availability, etc.
+-----------------------------------------------
+
+All of these issues raises several different questions in terms of what
+should be the lifetime of caching data, when do we discard the data
+versus suffer the network partition. Perhaps, put another way, what
+option do we pick in our CAP trade off, given that we will have
+partitions. Let's evaluate what these actually mean. Quickly though, I
+want to scope the discussion, this isn't worried about partitions in the
+underlay network for customer traffic purposes. Those will happen, but
+like today, because that's their data plane, it's definitely
+problematic, but we're not really going to be changing that, modulo all
+of the metdata.
+
+  o Consistency
+
+	If we picked consistency, that would suggest to me that we would
+	opt to queue and eventually drop traffic when we cannot
+	determine mapping information. It would suggest that we even go
+	one step further and that if we can't ping some set of our
+	proxies for invalidation information, then we should
+	pre-emptively halt sending data, because we do not know what
+	might have changed.
+
+
+  o Availability
+
+	In the face of a network partition, we opt to try our hardest to
+	always be able to send data to the last known location and try
+	to keep around opportunistic caches for VL3->VL2 lookups from
+	guests, as those tables are not controlled by us.
+
+Today, the Internet as a whole, whether looking at DNS, the local L2/L3
+network, etc. is all geared towards availability. Therefore, I think
+we're going to have to say availability is the choice we make in CAP.
+With that in mind, that raises the question of what are our availability
+trade offs in the face of a network partition. Here, in my biased
+opinion, is our goal:
+
+In the face of a network partition that causes us to be unable to get
+updates on the admin network to update state tables, we should try to
+keep using the data that we have for as long as possible. This implies
+that in the face of a partition:
+
+  o We need to try and ensure that a CN can answer VL3->VL2 queries that
+    it has already answered. It may make sense to take this one step
+    further and ship such tables to a CN.
+
+  o We should not try to invalidate any of our local data without
+    receiving a shoot down.
+
+Now, based on those issues, let's talk a bit more about a general design
+approach. In general, there will be a central single shard of
+moray/manatee that maintains all of the tables that we have here.
+Individual CNs will not communicate to that moray directly. Instead,
+we'll have a series of stateless proxy agents that can facilitate
+transforming the queries that we have into the current implementation of
+the moray database. In general, this layer of indirection is nice as it
+decouples the CNs which can speak a simpler and more tailored protocol,
+from the backend implementation. These proxies should live in DNS and to
+help deal with partitions, a CN should try to talk to many of them.
+
+Based on all this, we have a few different logical things that we need
+to be able to do:
+
+  o A CN needs to be able to ask about a VL2 mapping
+  o A CN needs to be able to ask about a VL3 mapping
+  o A CN needs to be notified when it should invalidate a VL2 mapping
+  o A CN needs to be notified when it should inject a VL3 mapping
+  o Receive a bulk form of the current VL3 mappings
+  o Receive an out of band message saying I don't have the MAC you think
+    I do from another CN on the underlay network.
+
+There are also a bunch of open questions that I have as a result of
+this. For example, while we know that these VL3 tables are necessary to
+have cached at the CN in the host, is the same true for the VL2 tables?
+Well, being able to snapshot them and send them along, will certainly be
+useful, though it doesn't feel as much of a strict requirement. However,
+the more we push out to the CN, the better off we are for availability.
+That said, it is always going to be an optimization to be able to
+receive these massive updates.
+
+Basic Protocol Thoughts
+-----------------------
+
+Based on all of the above, let's talk about our protocol for querying
+this data table, which maybe should just live in NAPI itself? eg. we can
+just create a dozen NAPI instances to help deal with load /
+reachability and then we already know how to find this stuff in binder.
+
+We have the following kinds of queries:
+
+  1) Connection ping/pong -- basically a keep alive ping every minute say
+  2) VL3->VL2 mapping lookup -- ARP/NDP/etc.
+  3) VL2->UL3 mapping lookup -- guest mac to underlay L3
+  5) VL3 gratuitous log -- ARP injections
+  6) VL2 shoot down log -- VL2 removals
+  7) Bulk VL3 request
+  8) Bulk VL2 Request
+  4) OOB VL2 shoot down
+
+There are several high levels of queries here. The first kind is the
+connection ping, which is used to keep alive the TCP connection between
+the CNs and the next hop to ensure that we're able to more pre-emptively
+know when it times out and throw out connections.
+
+The next kind covers types 2 and 3. These are CN requests for
+information. These are always CN initiated. In addition, there's another
+useful thing to think about. When we ask for a VL3->VL2 mapping, we're
+almost certainly going to be doing a VL2->UL3 mapping next, so we should
+make sure to reply with both.
+
+The next category is a bit different. Here, our centralized store is
+going to be making requests for us to do something. It's going to be
+directed towards our CN and then to a specific overlay instance. Here,
+we're going to need to get these and then perform the actions that they
+indicate. Only once performed, can we reply back to say remove it from
+the database and then do our next query. The nice thing about these, is
+that they're all relatively idempotent. Removing a VL2->UL3 mapping can
+always be done, like a cache invalidation.
+
+The fourth group here are bulk data requests. These will probably
+generally be used when a CN boots up to help bootstrap its notion of the
+world, at which point it will then need to also catch up and clean up
+its shoot down and VL3 injection records.
+
+The final group is a bit different. Here, CNs are contacting other CNs
+to report back that they sent something to them that has no entry. These
+will need to be rate limited and I suggest that we use UDP for these,
+otherwise creating and maintaining connections for all of these will be
+painful. The act of the out of band notification is purely an
+optimization here and allows us to try and react faster when there's a
+partition or when something has been moved / invalidated.
+
+We should put together a simple structure to handle these requests and
+responses. Here's a strawman for the SDC Vxlan Protocol (SVP). Perhaps,
+something like:
+
+typedef struct svp_req {
+	uint16_t	svp_ver;
+	uint16_t	svp_op;
+	uint32_t	svp_size;
+	uint32_t	svp_id;
+	uint32_t	svp_crc32;
+	uint8_t		svp_data[];
+} svp_req_t;
+
+typedef enum svp_op {
+	SVP_R_UNKNOWN	= 0x00,
+	SVP_R_PING	= 0x01,
+	SVP_R_PONG	= 0x02,
+	SVP_R_VL2_REQ	= 0x03,
+	SVP_R_VL2_ACK	= 0x04,
+	SVP_R_VL3_REQ	= 0x05,
+	SVP_R_VL3_ACK	= 0x06,
+	SVP_R_BULK_REQ	= 0x07,
+	SVP_R_BULK_ACK	= 0x08,
+	SVP_R_LOG_REQ	= 0x09,
+	SVP_R_LOG_ACK	= 0x0A,
+	SVP_R_LOG_RM	= 0x0B,
+	SVP_R_LOG_RACK	= 0x0C,
+	SVP_R_SHOOTDOWN	= 0x0D
+} svp_op_t;
+
+typedef enum svp_status {
+	SVP_S_OK	= 0x00,	/* Everything OK */
+	SVP_S_FATAL	= 0x01,	/* Fatal error, close connection */
+	SVP_S_NOTFOUND	= 0x02,	/* Entry not found */
+	SVP_S_BADL3TYPE	= 0x03,	/* Unknown svp_vl3_type_t */
+	SVP_S_BADBULK,	= 0x04,	/* Unknown svp_bulk_type_t */
+	SVP_S_BADLOG	= 0x05,	/* Unknown svp_log_type_t */
+	SVP_S_LOGAGIN	= 0x06	/* Nothing in the log yet */
+} svp_status_t;
+
+All members of the structure svp_req_t should be in Network Byte Order.
+Here, the member svp_ver, should be 1 for this current version of the
+protocol. The member, svp_op should be the data size of the svp_data[]
+section in bytes. It may be zero depending on the type of operation we
+are performing. svp_id is set by clients as a private identifier that
+will be identical in the servers reply. Note, that even if a client
+makes several requests, the server may reply with them in any order, but
+every request must be completely streamed out before another one is
+written out. The member svp_crc32 contains the CRC32 of the data.
+Finally all the payload data will be placed in the member svp_data.
+There will be at most svp_size bytes of data.
+
+For each of the requests, we'll discuss what they entail, as well as the
+data payload associated with them.
+
+   + SVP_R_PING
+
+	This is done as a keep alive measure by the client. The server
+	should issue an SVP_R_PONG in reply to this. There are no
+	expectations from the server that the client should issue these
+	at a certain rate; however, clients will be doing so as a form
+	of ensuring that the TCP entry is alive.
+
+	The SVP_R_PING has no data.
+
+   + SVP_R_PONG
+
+	When a server receives an SVP_R_PING, the server replies with an
+	SVP_R_PONG. Like the SVP_R_PING, there is no data for the SVP_R_PONG.
+
+   + SVP_R_VL2_REQ
+
+	A client issues the SVP_R_VL2_REQ whenever it needs to perform a
+	VLS->UL3 lookup. Requests have the following structure:
+
+	typedef struct svp_vl2_req {
+		uint8_t		sl2r_mac[ETHERADDRL];
+		uint8_t		sl2r_pad[2];
+		uint32_t	sl2r_vnetid;
+	} svp_vl2_req_t;
+
+   + SVP_R_VL2_ACK
+
+	This is the message a server uses to reply to the SVP_R_VL2_REQ.
+	If the destination on the underlay is an IPv4 address, it should
+	be encoded as an IPv4-mapped IPv6 address.
+
+	typedef struct svp_vl2_ack {
+		uint16_t	sl2a_status;
+		uint16_t	sl2a_port;
+		struct in6_addr	sl2a_addr;
+	} svp_vl2_ack_t;	
+
+   + SVP_R_VL3_REQ
+
+	A client issues this request whenever it needs to perform a
+	VL3->VL2 lookup. Note, that this also implicitly performs a
+	VL2->UL3 lookup as well. The sl3r_type member is used to
+	indicate the kind of lookup type that we're performing, eg. is
+	it a L3 or L2.
+
+	typedef enum svp_vl3_type {
+		SVP_VL3_IP	= 0x01,
+		SVP_VL3_IPV6	= 0x02
+	} svp_vl3_type_t
+
+	typedef struct svp_vl3_req {
+		struct in6_addr	sl3r_ip;
+		uint32_t	sl3r_type;
+		uint32_t	sl3r_vnetid;
+	} svp_vl3_req_t;
+
+   + SVP_R_VL3_ACK
+
+	This response includes an answer to both the VL3->VL2 and
+	VL2->UL3 requests.
+
+	typedef struct svp_vl3_ack {
+		uint32_t	sl3a_status;
+		uint8_t		sl3a_mac[ETHERADDRL];
+		uint16_t	sl3a_uport;
+		struct in6_addr	sl3a_uip;
+	} svp_vl3_ack_t;
+
+   + SVP_R_BULK_REQ
+
+	This requests a bulk dump of data. Currently we have two kinds
+	of data tables that we need to dump: VL3->VL2 mappings and
+	VL2->UL3 mappings. The kind that we want is indicated using the
+	svbr_type member.
+
+	typedef enum svp_bulk_type {
+		SVP_BULK_VL2	= 0x01,
+		SVP_BULK_VL3	- 0x02
+	} svp_bulk_type_t;
+
+	typedef struct svp_bulk_req {
+		uint32_t	svbr_type;
+	} svp_bulk_req_t;
+
+   + SVP_R_BULK_ACK
+
+	When replying to a bulk request, data is streamed back across.
+	The format of the data is currently undefined and as we work on
+	the system, we'll get a better understanding of what this should
+	look like. A client may need to stream such a request to disk,
+	or the format will need to be in a streamable format that allows
+	the client to construct data.
+
+	typedef struct svp_bulk_ack{ 
+		uint32_t	svba_status;
+		uint32_t	svba_type;
+		uint8_t		svba_data[];
+	} svp_bulk_ack_t;
+
+   + SVP_R_LOG_REQ
+
+	This requests a log entries from the specified log from the
+	server. The total number of entries that the client is prepared
+	to receive are in svlr_count. However, the client may receive
+	less than they asked for.
+
+	typedef enum svp_log_type {
+		SVP_LOG_VL2	= 0x01,
+		SVP_LOG_VL3	= 0x02
+	} svp_log_type_t;
+
+	typedef struct svp_log_req {
+		uint32_t	svlr_type;
+		uint32_t	svlr_count;
+	} svp_log_req_t;
+
+   + SVP_R_LOG_ACK
+
+	The server replies to a log request by sending a series of log
+	entries based on the type of svp_log_type_t. If it's a VL2
+	request, then the svp_log_vl2_t is used, otherwise the
+	svp_log_vl3_t is used. The response always leads with a
+	svp_bulk_ack_t. It is then followed by a number of entries which
+	can be calculated based on taking the toal data payload,
+	subtracting the svp_log_ack_t, and then dividing that by the
+	size of the corresponding data structure.
+
+	typedef struct svp_log_vl2 {
+		uint8_t		svl2_id[16];	/* 16-byte UUID */
+		uint8_t		svl2_mac[ETHERADDRL];
+		uint8_t		svl2_pad[2];
+		uint32_t	svl2_vnetid;
+	} svp_log_vl2_t;
+
+	typedef struct svp_log_vl3 {
+		uint8_t		svl3_id[16];	/* 16-byte UUID */
+		struct in6_addr	svl3_ip;
+		uint8_t		svl3_mac[ETHERADDRL];
+		uint8_t		svl3_pad[2];
+		uint32_t	svl3_vnetid;
+	} svp_log_vl3_t;
+
+	typedef struct svp_log_ack {
+		uint32_t	svla_status;
+		uint32_t	svla_type;
+		uint8_t		svla_data[];
+	} svp_log_ack_t;
+
+   + SVP_R_LOG_RM
+
+	This is used after the client successfully processes a series of
+	the log stream. It replies to tell the server that it can
+	remove those IDs from processing. The IDs used are the same IDs
+	that were in the individual SVP_R_LOG_ACK entries. Again, the
+	member svrr_type should be a svp_log_type_t member.
+
+	typedef struct svp_lrm_req {
+		uint32_t	svrr_type;
+		uint32_t	svrr_pad;
+		uint8_t		svrr_ids[];
+	} svp_lrm_req_t;
+
+   + SVP_R_LOG_RM_ACK
+
+	This is used to indicate that a log entry has been successfully
+	deleted and at this point it makes sense to go and ask for
+	another SVP_R_LOG_REQ.
+
+	typedef struct svp_lrm_ack {
+		uint32_t	svra_status;
+	} svp_lrm_ack_t;
+
+   + SVP_R_SHOOTDOWN
+
+	A shootdown is used by a CN to reply to another CN that it sent
+	an invalid entry that could not be processed. This should be a
+	relatively infrequent occurrence. Unlike the rest of the
+	messages, there is no reply to it. It's a single request to try
+	and help get us out there. When a node receives this, it will
+	issue a conditional revocation ioctl, that removes the entry if
+	and only if, it matches the IP. That way if we've already gotten
+	an updated entry for this, we don't remove it again.
+
+	typedef struct svp_shootdown {
+		uint8_t		svsd_mac[ETHERADDRL];
+		uint8_t		svsd_pad[2];
+		uint32_t	svsd_vnetid;
+	} svp_shootdown_t;
+
+This leaves us with a few pieces of information that we'll need to
+configure and pass in at runtime to the plugin. Specifically we'll need:
+
+   1) Hostname for the 'servers'
+   2) Port to communicate on
+   3) OOB invalidation IP/port to listen on
+
+
+All of this means that our client has a bunch of diverse, but related,
+tasks to complete:
+
+   1) Listening for OOB invalidations
+   2) Always requesting Logs
+   3) Getting bulk data on device creation
+   4) Making requests
+   5) Dealing with DNS lookups and the connection pool. Maintaining
+      state on requests, performing pings to those clients, request
+      serialization, etc.
+
+All in all, the above is going to be a fair bit of code to go ahead and
+create, but create it we shall.
+
+Database Update Rules
+---------------------
+
+Let's change tracks entirely. Instead of focusing on the client, we need
+to focus on the SDC integration and discuss what operations happen and
+need table updates and how we should perform those. Our database needs
+to have a bunch of logical tables:
+
+    + VL2->UL3 mappings
+	- Virtual Network ID
+	- VL2 address
+	- UL3 CN UUID
+    + VL3->VL2 mappings
+	- Virtual Network ID
+	- VL3 Address
+	- VL2 Address
+    + VL2 shoot downs per CN
+	- CN UUID
+	- Entry uint64_t id
+	- Virtual Network ID
+	- MAC address
+    + VL3 gratuitous injections per CN
+	- CN UUID
+	- Entry uint64_t id
+	- Virtual Network ID
+	- VL3 Address
+	- VL2 Address
+	- Target VL2 address
+
+So, let's describe what we need to do on every action that we originally
+identified and what entries we need to add, remove, etc.
+
+    + NIC Created/Assigned (VM created)
+
+	We need to update the VL2->UL3 mappings
+
+    + NIC Removed (VM deleted)
+
+	We need to remove the VL2->UL3 mappings and then identify every
+	CN that has an active VM on that virtual network ID, and write a
+	VL2 shoot down record in for it.
+
+    + NIC Moved (VM migration)
+
+	This looks exactly NIC removal, followed by NIC creation, which
+	means that it reduces to NIC removal.
+
+    + IP Created (IP assigned to a NIC/VM created)
+
+	We need to add an entry into the VL3->VL2 mappings table for
+	that virtual network ID. Then, because we have no way of knowing
+	that this may have been reused or not, we need to find all of
+	the VMs that have an IP address on that same VL3 subnet and add
+	an entry for each of them into the VL3 gratuitous injection
+	table.
+
+     + IP Deleted (IP address removed from NIC/VM deleted)
+
+	Here, we should remove the VL3->VL2 mapping entry. And then we
+	should follow it up by removing all extent VL3 gratuitous
+	injections that we have outstanding.
+
+     + IP Moved (VM migrated)
+
+	If an IP address moves, but is still associated with the same
+	VM, eg. we have a case where we've migrated the VM from one node
+	to another, then there's nothing to do from an IP address
+	perspective, just perform the NIC moved actions.
+
+     + IP Moved (Across VMs)
+
+	If an IP address is moved from one VM to another, then we need
+	to perform the IP deleted and IP created cases. This will cause
+	us to ensure that we have a gratuitous injection that updates
+	the MAC address where the VL3 lives.
