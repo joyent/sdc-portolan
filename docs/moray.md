@@ -58,12 +58,19 @@ cn_id           | UUID      | yes    | CN this MAC resides on
 vid             | UUID      | yes    | vnet ID
 version         | Int       |        | per-record version
 deleted         | Bool      |        | tombstone indicator
-\_key           |           |        | tuple of [mac,ip,vid]
+\_key           |           |        | tuple of [ip,vid]
 
 Each customer controls their entire network, so we don't need per-record
 owner_uuid information (unlike other NAPI networks).  We can still create a
 matching record in the napi_nics bucket to hold other nic details such as
 antispoof settings, and create / delete both in a transaction.
+
+\_key is the tuple of [ip, vid] for two reasons:
+
+- This allows an L3 lookup (see below), to be fast - we know both the IP and
+  VID at lookup time, so it's a SELECT on the primary key.
+- This easily prevents duplicate IPs from being created on a VXLAN, since
+  there will be a key collision.
 
 Open questions:
 
