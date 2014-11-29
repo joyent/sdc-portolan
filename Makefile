@@ -69,10 +69,10 @@ release: all
 	cp -R $(TOP)/boot/* $(RELSTAGEDIR)/root/opt/smartdc/boot/
 	# portolan
 	mkdir -p $(RELSTAGEDIR)/root/opt/smartdc/$(NAME)/{etc,build}
+	# XXX add node_modules back when it exists.
 	cp -r \
 		$(TOP)/package.json \
 		$(TOP)/lib \
-		$(TOP)/node_modules \
 		$(TOP)/smf \
 		$(TOP)/test \
 		$(TOP)/sapi_manifests \
