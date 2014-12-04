@@ -10,9 +10,9 @@
         "ctype": "0.5.3",
         "dtrace-provider": "0.3.1",
         "ipaddr.js": "0.1.6",
-        "mkdirp": "0.5.0",
         "moray": "git+ssh://git@github.com:joyent/node-moray.git#441fd44",
-        "vasync": "1.6.2"
+        "mkdirp": "0.5.0",
+        "vasync": "1.6.2",
         "vstream": "0.1.0"
     },
     "devDependencies": {
