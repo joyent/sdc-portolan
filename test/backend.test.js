@@ -43,6 +43,27 @@ test('setup', function (t) {
     });
 });
 
+test('ping', function (t) {
+    var stream = createStream();
+
+    var obj = {
+        svp_type: 1, // SVP_R_PING
+        svp_id: 5
+    };
+
+    var expected = {
+        svp_type: 2, // SVP_R_PONG
+        svp_id: 5
+    };
+
+    stream.on('readable', function () {
+        var actual = stream.read();
+        t.deepEquals(actual, expected);
+        t.end();
+    });
+    stream.end(obj);
+});
+
 test('vl2', function (t) {
     var stream = createStream();
 
@@ -75,6 +96,7 @@ test('vl2', function (t) {
 
 test('vl3', function (t) {
     var stream = createStream();
+
     var obj = {
         svp_type: 5, // SVP_R_VL3_REQ
         svp_id: 7,
