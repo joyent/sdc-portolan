@@ -58,8 +58,80 @@ var vnet_mac_ip = {
     }
 };
 
+var portolan_underlay_mappings = {
+    name: 'portolan_underlay_mappings',
+    cfg: {
+        index: {
+            cn_id: {
+                type: 'string'
+            },
+            ip: {
+                type: 'string'
+            },
+            port: {
+                type: 'number'
+            }
+        },
+        options: {
+            version: 0
+        }
+    }
+};
+
+var cn_net_events = {
+    name: 'cn_net_events',
+    cfg: {
+        index: {
+            cn_id: {
+                type: 'string'
+            },
+            vid: {
+                type: 'number'
+            },
+            id: {
+                type: 'number'
+            }
+        },
+        options: {
+            version: 0
+        }
+    }
+};
+
+var napi_vnetworks = {
+    name: 'napi_vnetworks',
+    cfg: {
+        index: {
+            vid: {
+                type: 'string'
+            },
+            owner_uuid: {
+                type: 'string'
+            },
+            start_ip: {
+                type: 'string'
+            },
+            end_ip: {
+                type: 'string'
+            },
+            subnet_start: {
+                type: 'string'
+            },
+            subnet_bits: {
+                type: 'number'
+            }
+        },
+        options: {
+            version: 0
+        }
+    }
+};
+
 var tables = [
-    vnet_mac_ip
+    vnet_mac_ip,
+    portolan_underlay_mappings,
+    cn_net_events,
+    napi_vnetworks
 ];
 
 var rows = [
@@ -69,9 +141,18 @@ var rows = [
         value: {
             mac: common.macToInt('00:0a:95:9d:68:16'),
             ip: '10.0.0.1',
-            'cn_id': 'b4e5ff64-7b40-11e4-a6fa-d34c824a42cd',
+            cn_id: 'b4e5ff64-7b40-11e4-a6fa-d34c824a42cd',
             vid: 12340,
             deleted: false
+        }
+    },
+    {
+        bucket: 'portolan_underlay_mappings',
+        key: 'b4e5ff64-7b40-11e4-a6fa-d34c824a42cd',
+        value: {
+            cn_id: 'b4e5ff64-7b40-11e4-a6fa-d34c824a42cd',
+            ip: '192.168.1.1',
+            port: 123
         }
     }
 ];

@@ -81,8 +81,8 @@ test('vl2', function (t) {
         svp_id: 7,
         svp_msg: {
             vl2_status: 0,
-            vl2_port: common.VL_PORT,
-            vl2_addr: common.stringToIp('10.0.0.1')
+            vl2_port: 123,
+            vl2_addr: common.stringToIp('192.168.1.1')
         }
     };
 
@@ -112,8 +112,8 @@ test('vl3', function (t) {
         svp_msg: {
             vl3_status: 0,
             vl3_mac: common.macToInt('00:0a:95:9d:68:16'),
-            vl3_port: common.VL_PORT,
-            vl3_addr: common.stringToIp('10.0.0.1')
+            vl3_uport: 123,
+            vl3_uaddr: common.stringToIp('192.168.1.1')
         }
     };
 
