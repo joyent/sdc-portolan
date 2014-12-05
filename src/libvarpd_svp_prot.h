@@ -39,7 +39,6 @@ typedef struct svp_req {
 	uint32_t	svp_size;
 	uint32_t	svp_id;
 	uint32_t	svp_crc32;
-	uint8_t		svp_data[];
 } svp_req_t;
 
 typedef enum svp_op {
@@ -78,7 +77,7 @@ typedef struct svp_vl2_req {
 typedef struct svp_vl2_ack {
 	uint16_t	sl2a_status;
 	uint16_t	sl2a_port;
-	struct in6_addr	sl2a_addr;
+	uint8_t		sl2a_addr[16];
 } svp_vl2_ack_t;
 
 typedef enum svp_vl3_type {
@@ -87,7 +86,7 @@ typedef enum svp_vl3_type {
 } svp_vl3_type_t;
 
 typedef struct svp_vl3_req {
-	struct in6_addr	sl3r_ip;
+	uint8_t		sl3r_ip[16];
 	uint32_t	sl3r_type;
 	uint32_t	sl3r_vnetid;
 } svp_vl3_req_t;
@@ -96,7 +95,7 @@ typedef struct svp_vl3_ack {
 	uint32_t	sl3a_status;
 	uint8_t		sl3a_mac[ETHERADDRL];
 	uint16_t	sl3a_uport;
-	struct in6_addr	sl3a_uip;
+	uint8_t		sl3a_uip[16];
 } svp_vl3_ack_t;
 
 typedef enum svp_bulk_type {
@@ -111,7 +110,6 @@ typedef struct svp_bulk_req {
 typedef struct svp_bulk_ack {
 	uint32_t	svba_status;
 	uint32_t	svba_type;
-	uint8_t		svba_data[];
 } svp_bulk_ack_t;
 
 typedef enum svp_log_type {
@@ -133,7 +131,7 @@ typedef struct svp_log_vl2 {
 
 typedef struct svp_log_vl3 {
 	uint8_t		svl3_id[16];	/* 16-byte UUID */
-	struct in6_addr	slv3_ip;
+	uint8_t		slv3_ip[16];
 	uint8_t		svl3_mac[ETHERADDRL];
 	uint16_t	svl3_vlan;
 	uint8_t		svl3_tmac[ETHERADDRL];
@@ -144,13 +142,11 @@ typedef struct svp_log_vl3 {
 typedef struct svp_log_ack {
 	uint32_t	svla_status;
 	uint32_t	svla_type;
-	uint8_t		svla_data[];
 } svp_log_ack_t;
 
 typedef struct svp_lrm_req {
 	uint32_t	svrr_type;
 	uint32_t	svrr_pad;
-	uint8_t		svrr_ids[];
 } svp_lrm_req_t;
 
 typedef struct svp_lrm_ack {

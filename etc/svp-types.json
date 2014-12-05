@@ -1,0 +1,102 @@
+{ "metadata":
+	{
+		"ctf2json_version": "1.0",
+		"created_at": 1417661696,
+		"derived_from": "src/types",
+		"ctf_version": 2,
+		"requested_types": [ "svp_req_t" , "svp_vl2_req_t" , "svp_vl2_ack_t" , "svp_vl3_req_t" , "svp_vl3_ack_t" , "svp_bulk_req_t" , "svp_bulk_ack_t" , "svp_log_req_t" , "svp_log_vl2_t" , "svp_log_vl3_t" , "svp_log_ack_t" , "svp_lrm_req_t" , "svp_lrm_ack_t" , "svp_shootdown_t" ]
+	},
+"data":
+	[
+		{ "name": "unsigned int", "integer": { "length": 4, "signed": false } },
+		{ "name": "uint32_t", "typedef": "unsigned int" },
+		{ "name": "struct svp_log_ack", "struct": [
+			{ "name": "svla_status", "type": "uint32_t" },
+			{ "name": "svla_type", "type": "uint32_t" }
+		] },
+		{ "name": "svp_log_ack_t", "typedef": "struct svp_log_ack" },
+		{ "name": "unsigned char", "integer": { "length": 1, "signed": false } },
+		{ "name": "uint8_t", "typedef": "unsigned char" },
+		{ "name": "struct svp_vl2_req", "struct": [
+			{ "name": "sl2r_mac", "type": "uint8_t [6]" },
+			{ "name": "sl2r_pad", "type": "uint8_t [2]" },
+			{ "name": "sl2r_vnetid", "type": "uint32_t" }
+		] },
+		{ "name": "svp_vl2_req_t", "typedef": "struct svp_vl2_req" },
+		{ "name": "unsigned short", "integer": { "length": 2, "signed": false } },
+		{ "name": "uint16_t", "typedef": "unsigned short" },
+		{ "name": "struct svp_vl2_ack", "struct": [
+			{ "name": "sl2a_status", "type": "uint16_t" },
+			{ "name": "sl2a_port", "type": "uint16_t" },
+			{ "name": "sl2a_addr", "type": "uint8_t [16]" }
+		] },
+		{ "name": "svp_vl2_ack_t", "typedef": "struct svp_vl2_ack" },
+		{ "name": "struct svp_lrm_ack", "struct": [
+			{ "name": "svra_status", "type": "uint32_t" }
+		] },
+		{ "name": "struct svp_vl3_req", "struct": [
+			{ "name": "sl3r_ip", "type": "uint8_t [16]" },
+			{ "name": "sl3r_type", "type": "uint32_t" },
+			{ "name": "sl3r_vnetid", "type": "uint32_t" }
+		] },
+		{ "name": "struct svp_log_req", "struct": [
+			{ "name": "svlr_type", "type": "uint32_t" },
+			{ "name": "svlr_count", "type": "uint32_t" }
+		] },
+		{ "name": "svp_log_req_t", "typedef": "struct svp_log_req" },
+		{ "name": "struct svp_shootdown", "struct": [
+			{ "name": "svsd_mac", "type": "uint8_t [6]" },
+			{ "name": "svsd_pad", "type": "uint8_t [2]" },
+			{ "name": "svsd_vnetid", "type": "uint32_t" }
+		] },
+		{ "name": "struct svp_vl3_ack", "struct": [
+			{ "name": "sl3a_status", "type": "uint32_t" },
+			{ "name": "sl3a_mac", "type": "uint8_t [6]" },
+			{ "name": "sl3a_uport", "type": "uint16_t" },
+			{ "name": "sl3a_uip", "type": "uint8_t [16]" }
+		] },
+		{ "name": "svp_vl3_req_t", "typedef": "struct svp_vl3_req" },
+		{ "name": "svp_vl3_ack_t", "typedef": "struct svp_vl3_ack" },
+		{ "name": "struct svp_bulk_req", "struct": [
+			{ "name": "svbr_type", "type": "uint32_t" }
+		] },
+		{ "name": "svp_bulk_req_t", "typedef": "struct svp_bulk_req" },
+		{ "name": "struct svp_bulk_ack", "struct": [
+			{ "name": "svba_status", "type": "uint32_t" },
+			{ "name": "svba_type", "type": "uint32_t" }
+		] },
+		{ "name": "svp_bulk_ack_t", "typedef": "struct svp_bulk_ack" },
+		{ "name": "struct svp_req", "struct": [
+			{ "name": "svp_ver", "type": "uint16_t" },
+			{ "name": "svp_op", "type": "uint16_t" },
+			{ "name": "svp_size", "type": "uint32_t" },
+			{ "name": "svp_id", "type": "uint32_t" },
+			{ "name": "svp_crc32", "type": "uint32_t" }
+		] },
+		{ "name": "svp_req_t", "typedef": "struct svp_req" },
+		{ "name": "struct svp_lrm_req", "struct": [
+			{ "name": "svrr_type", "type": "uint32_t" },
+			{ "name": "svrr_pad", "type": "uint32_t" }
+		] },
+		{ "name": "svp_lrm_req_t", "typedef": "struct svp_lrm_req" },
+		{ "name": "svp_lrm_ack_t", "typedef": "struct svp_lrm_ack" },
+		{ "name": "struct svp_log_vl2", "struct": [
+			{ "name": "svl2_id", "type": "uint8_t [16]" },
+			{ "name": "svl2_mac", "type": "uint8_t [6]" },
+			{ "name": "svl2_pad", "type": "uint8_t [2]" },
+			{ "name": "svl2_vnetid", "type": "uint32_t" }
+		] },
+		{ "name": "svp_log_vl2_t", "typedef": "struct svp_log_vl2" },
+		{ "name": "struct svp_log_vl3", "struct": [
+			{ "name": "svl3_id", "type": "uint8_t [16]" },
+			{ "name": "slv3_ip", "type": "uint8_t [16]" },
+			{ "name": "svl3_mac", "type": "uint8_t [6]" },
+			{ "name": "svl3_vlan", "type": "uint16_t" },
+			{ "name": "svl3_tmac", "type": "uint8_t [6]" },
+			{ "name": "svl3_tpad", "type": "uint8_t [2]" },
+			{ "name": "svl3_vnetid", "type": "uint32_t" }
+		] },
+		{ "name": "svp_log_vl3_t", "typedef": "struct svp_log_vl3" },
+		{ "name": "svp_shootdown_t", "typedef": "struct svp_shootdown" }
+	]
+}

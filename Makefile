@@ -23,6 +23,23 @@ JSSTYLE_FLAGS	 = -f tools/jsstyle.conf
 SMF_MANIFESTS_IN = smf/manifests/portolan.xml.in
 CLEAN_FILES += ./node_modules
 
+CTFCONVERT=ctfconvert
+CTF2JSON=ctf2json
+CTF_TYPES=-t svp_req_t \
+	-t svp_vl2_req_t \
+	-t svp_vl2_ack_t \
+	-t svp_vl3_req_t \
+	-t svp_vl3_ack_t \
+	-t svp_bulk_req_t \
+	-t svp_bulk_ack_t \
+	-t svp_log_req_t \
+	-t svp_log_vl2_t \
+	-t svp_log_vl3_t \
+	-t svp_log_ack_t \
+	-t svp_lrm_req_t \
+	-t svp_lrm_ack_t \
+	-t svp_shootdown_t
+
 NODE_PREBUILT_VERSION=v0.11.14
 ifeq ($(shell uname -s),SunOS)
 	NODE_PREBUILT_TAG=zone
@@ -104,6 +121,12 @@ publish: release
 	mkdir -p $(BITS_DIR)/$(NAME)
 	cp $(TOP)/$(RELEASE_TARBALL) $(BITS_DIR)/$(NAME)/$(RELEASE_TARBALL)
 
+src/types: src/types.c src/libvarpd_svp_prot.h
+	$(CC) -g src/types.c -o src/types
+	$(CTFCONVERT) -l svp src/types
+
+etc/svp-types.json: src/types
+	$(CTF2JSON) -f src/types $(CTF_TYPES) > $@
 
 include ./tools/mk/Makefile.deps
 ifeq ($(shell uname -s),SunOS)
