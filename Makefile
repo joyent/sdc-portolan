@@ -73,6 +73,7 @@ release: all
 	cp -r \
 		$(TOP)/package.json \
 		$(TOP)/lib \
+		$(TOP)/node_modules \
 		$(TOP)/smf \
 		$(TOP)/test \
 		$(TOP)/sapi_manifests \
