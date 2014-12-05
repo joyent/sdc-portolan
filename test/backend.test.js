@@ -112,8 +112,8 @@ test('vl3', function (t) {
         svp_msg: {
             vl3_status: 0,
             vl3_mac: common.macToInt('00:0a:95:9d:68:16'),
-            vl3_uport: 123,
-            vl3_uaddr: common.stringToIp('192.168.1.1')
+            vl3_port: 123,
+            vl3_addr: common.stringToIp('192.168.1.1')
         }
     };
 
