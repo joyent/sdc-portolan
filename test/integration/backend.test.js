@@ -12,8 +12,8 @@ var bunyan = require('bunyan');
 var moray = require('moray');
 var test = require('tape');
 
-var common = require('../lib/common.js');
-var Stream = require('../lib/moray.js');
+var common = require('../../lib/common.js');
+var MorayStore = require('../../lib/backend/moray.js');
 
 var LOG = bunyan.createLogger({
     name: 'moray',
@@ -22,23 +22,22 @@ var LOG = bunyan.createLogger({
     serializers: bunyan.stdSerializers
 });
 
-var CLIENT;
+var SHARED;
 
 function createStream() {
-    var stream = new Stream({
-        moray: CLIENT,
+    var stream = MorayStore.createStream({
         log: LOG
     });
     return (stream);
 }
 
 test('setup', function (t) {
-    CLIENT = moray.createClient({
+    SHARED = MorayStore.init({
         host: process.env.MORAY_HOST || '127.0.0.1',
         port: process.env.MORAY_PORT || 2020,
         log: LOG
-    });
-    CLIENT.on('connect', function () {
+    }, function (err) {
+        t.ifError(err);
         t.end();
     });
 });
@@ -112,8 +111,8 @@ test('vl3', function (t) {
         svp_msg: {
             vl3_status: 0,
             vl3_mac: common.macToInt('00:0a:95:9d:68:16'),
-            vl3_uport: 123,
-            vl3_uaddr: common.stringToIp('192.168.1.1')
+            vl3_port: 123,
+            vl3_addr: common.stringToIp('192.168.1.1')
         }
     };
 
@@ -126,6 +125,6 @@ test('vl3', function (t) {
 });
 
 test('teardown', function (t) {
-    CLIENT.close();
+    SHARED.moray.close();
     t.end();
 });
