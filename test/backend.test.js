@@ -13,7 +13,7 @@ var moray = require('moray');
 var test = require('tape');
 
 var common = require('../lib/common.js');
-var Stream = require('../lib/moray.js');
+var MorayStore = require('../lib/backend/moray.js');
 
 var LOG = bunyan.createLogger({
     name: 'moray',
@@ -22,23 +22,22 @@ var LOG = bunyan.createLogger({
     serializers: bunyan.stdSerializers
 });
 
-var CLIENT;
+var SHARED;
 
 function createStream() {
-    var stream = new Stream({
-        moray: CLIENT,
+    var stream = MorayStore.createStream({
         log: LOG
     });
     return (stream);
 }
 
 test('setup', function (t) {
-    CLIENT = moray.createClient({
+    SHARED = MorayStore.init({
         host: process.env.MORAY_HOST || '127.0.0.1',
         port: process.env.MORAY_PORT || 2020,
         log: LOG
-    });
-    CLIENT.on('connect', function () {
+    }, function (err) {
+        t.ifError(err);
         t.end();
     });
 });
@@ -126,6 +125,6 @@ test('vl3', function (t) {
 });
 
 test('teardown', function (t) {
-    CLIENT.close();
+    SHARED.moray.close();
     t.end();
 });
