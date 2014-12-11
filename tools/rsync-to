@@ -19,35 +19,35 @@ set -o errexit
 TOP=$(cd $(dirname $0)/../; pwd)
 NODE=$1
 
-if [[ -z "$DOCKER_ZONE" ]]; then
-    DOCKER_ZONE=$(ssh $NODE "/opt/smartdc/bin/sdc-vmapi /vms" 2>/dev/null \
-        | json -H -c 'this.tags && this.tags.smartdc_role === "docker"' \
+if [[ -z "$PORTOLAN_ZONE" ]]; then
+    PORTOLAN_ZONE=$(ssh $NODE "/opt/smartdc/bin/sdc-vmapi /vms" 2>/dev/null \
+        | json -H -c 'this.tags && this.tags.smartdc_role === "portolan"' \
             -c 'this.state === "running"' 0.uuid)
 fi
-echo "DOCKER_ZONE: $DOCKER_ZONE"
+echo "PORTOLAN_ZONE: $PORTOLAN_ZONE"
 
 extraOpts=
 if [[ $(uname -s) != "SunOS" ]]; then
     extraOpts="--exclude *.node --exclude build"
 else
     # Clean node_modules everytime.
-    ssh $NODE rm -rf /zones/$DOCKER_ZONE/root/opt/smartdc/docker/node_modules
+    ssh $NODE rm -rf /zones/$PORTOLAN_ZONE/root/opt/smartdc/portolan/node_modules
 fi
 
 rsync -av ${TOP}/ \
-    $NODE:/zones/$DOCKER_ZONE/root/opt/smartdc/docker/ \
+    $NODE:/zones/$PORTOLAN_ZONE/root/opt/smartdc/portolan/ \
     $extraOpts \
     --exclude .git/ \
     --exclude /etc/config.json \
     --exclude /deps/ \
-    --exclude /doc/ \
+    --exclude /docs/ \
     --exclude /tools/ \
     --exclude /tmp/
 
-state=$(ssh ${NODE} svcs -z ${DOCKER_ZONE} -H -o state docker)
+state=$(ssh ${NODE} svcs -z ${PORTOLAN_ZONE} -H -o state portolan)
 if [[ "$state" == "maintenance" ]]; then
-    ssh ${NODE} svcadm -z ${DOCKER_ZONE} clear docker
+    ssh ${NODE} svcadm -z ${PORTOLAN_ZONE} clear portolan
 else
-    ssh ${NODE} svcadm -z ${DOCKER_ZONE} restart docker
+    ssh ${NODE} svcadm -z ${PORTOLAN_ZONE} restart portolan
 fi
-ssh ${NODE} svcadm -z ${DOCKER_ZONE} restart config-agent
+ssh ${NODE} svcadm -z ${PORTOLAN_ZONE} restart config-agent
