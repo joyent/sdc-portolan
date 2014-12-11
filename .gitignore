@@ -1,10 +1,10 @@
 /node_modules
 /tmp
 /build
-/etc
 /smf/manifests/portolan.xml
 .*.swp
 /portolan-pkg*.tar.bz2
 /docs/*.html
 /docs/*.json
 .DS_Store
+src/types

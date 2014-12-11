@@ -1,17 +1,23 @@
 {
-  "name": "sdc-portolan",
-  "version": "0.1.0",
-  "author": "Joyent (joyent.com)",
-  "private": true,
-  "dependencies": {
-    "assert-plus": "0.1.5",
-    "bunyan": "1.2.3",
-    "ipaddr.js": "0.1.6",
-    "moray": "git+ssh://git@github.com:joyent/node-moray.git#441fd44",
-    "vasync": "1.6.2"
-  },
-  "devDependencies": {
-    "tape": "3.0.3"
-  },
-  "license": "MPL-2.0"
+    "name": "portolan",
+    "description": "SDC Portolan service",
+    "version": "0.1.0",
+    "author": "Joyent (joyent.com)",
+    "private": true,
+    "dependencies": {
+        "assert-plus": "0.1.5",
+        "bunyan": "1.2.3",
+        "ctype": "0.5.3",
+        "dtrace-provider": "0.3.1",
+        "ipaddr.js": "0.1.6",
+        "lru-cache": "2.5.0",
+        "moray": "git+ssh://git@github.com:joyent/node-moray.git#441fd44",
+        "mkdirp": "0.5.0",
+        "vasync": "1.6.2",
+        "vstream": "0.1.0"
+    },
+    "devDependencies": {
+        "tape": "3.0.3"
+    },
+    "license": "MPL-2.0"
 }
