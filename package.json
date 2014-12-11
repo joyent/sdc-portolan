@@ -1,18 +1,20 @@
 {
     "name": "portolan",
     "description": "SDC Portolan service",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "author": "Joyent (joyent.com)",
     "private": true,
     "dependencies": {
         "assert-plus": "0.1.5",
         "bunyan": "1.2.3",
+        "cmdln": "3.0.1",
         "ctype": "0.5.3",
         "dtrace-provider": "0.3.1",
         "ipaddr.js": "0.1.6",
         "mkdirp": "0.5.0",
         "moray": "git+ssh://git@github.com:joyent/node-moray.git#441fd44",
-        "vasync": "1.6.2"
+        "vasync": "1.6.2",
+        "verror": "1.6.0",
         "vstream": "0.1.0"
     },
     "devDependencies": {
