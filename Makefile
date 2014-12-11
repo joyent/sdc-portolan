@@ -40,7 +40,7 @@ CTF_TYPES=-t svp_req_t \
 	-t svp_lrm_ack_t \
 	-t svp_shootdown_t
 
-NODE_PREBUILT_VERSION=v0.11.14
+NODE_PREBUILT_VERSION=v0.10.32
 ifeq ($(shell uname -s),SunOS)
 	NODE_PREBUILT_TAG=zone
 	NODE_PREBUILT_IMAGE=de411e86-548d-11e4-a4b7-3bb60478632a
