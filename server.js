@@ -12,8 +12,5 @@
  * Portolan server entry point
  */
 
-var fs = require('fs');
 var portolan = require('./lib/portolan');
-
-var server = portolan.createServer(JSON.parse(
-    fs.readFileSync('./etc/config.json').toString()));
+var server = portolan.createServer(require('./etc/config.json'));

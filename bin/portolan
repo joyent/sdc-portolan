@@ -1,0 +1,185 @@
+#!/usr/bin/env node
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
+
+/*
+ * Copyright (c) 2014, Joyent, Inc.
+ */
+
+/*
+ * Portolan CLI
+ */
+
+var assert = require('assert-plus');
+var backend;
+var cmdln = require('cmdln');
+var config = require('../etc/config.json');
+var util = require('util');
+var VError = require('verror').VError;
+
+
+
+// --- Globals
+
+
+
+var OPTS = {
+    cn: {
+        names: [ 'cn' ],
+        type: 'string',
+        help: 'Compute Node UUID'
+    },
+
+    help: {
+        names: [ 'help', 'h' ],
+        type: 'bool',
+        help: 'Print help and exit'
+    },
+
+    ip: {
+        names: [ 'ip' ],
+        type: 'string',
+        help: 'IP address'
+    },
+
+    mac: {
+        names: [ 'mac' ],
+        type: 'string',
+        help: 'MAC address'
+    },
+
+    vid: {
+        names: [ 'vid' ],
+        type: 'positiveInteger',
+        help: 'Virtual network ID'
+    }
+};
+
+
+
+// --- Internal
+
+
+
+function loadBackend() {
+    assert.object(config, 'config');
+    assert.string(config.backend, 'config.backend');
+    backend = require('../lib/backend/' + config.backend);
+}
+
+
+/**
+ * Rename the options in {Object} opts using {Object} trans.  Throw an error
+ * if any options are missing.
+ */
+function translateOpts(opts, trans) {
+    var missing = [];
+    var translated = {};
+
+    for (var t in trans) {
+        if (opts.hasOwnProperty(t)) {
+            translated[trans[t]] = opts[t];
+        } else {
+            missing.push(t);
+        }
+    }
+
+    if (missing.length !== 0) {
+        throw new VError('missing option%s: %s',
+            (missing.length == 1 ? '' : 's'),
+            missing.join(', '));
+    }
+
+    return translated;
+}
+
+
+
+// --- PortolanCLI object
+
+
+
+function PortolanCLI() {
+    cmdln.Cmdln.call(this, {
+        name: 'portolan',
+        description: 'portolan CLI',
+        options: [
+            OPTS.help
+        ]
+    });
+}
+
+util.inherits(PortolanCLI, cmdln.Cmdln);
+
+
+/**
+ * Run before the subcommand methods - overall initialization
+ */
+PortolanCLI.prototype.init = function _init(opts, args, callback) {
+    try {
+        loadBackend();
+    } catch (backErr) {
+        return callback(backErr);
+    }
+
+    backend.init(config, callback);
+};
+
+
+/**
+ * Add an overlay mapping
+ */
+PortolanCLI.prototype['do_add-overlay'] =
+    function _addOverlay(subcmd, opts, args, callback) {
+    var backendOpts;
+    try {
+        backendOpts = translateOpts(opts, {
+            cn: 'cn_id',
+            ip: 'ip',
+            mac: 'mac',
+            vid: 'vnet_id'
+        });
+    } catch (transOpts) {
+        return callback(transOpts);
+    }
+
+    backend.addOverlayMapping(backendOpts, callback);
+};
+
+PortolanCLI.prototype['do_add-overlay'].options = [
+    OPTS.cn,
+    OPTS.ip,
+    OPTS.mac,
+    OPTS.vid
+];
+
+
+/**
+ * Add an underlay mapping
+ */
+PortolanCLI.prototype['do_add-underlay'] =
+    function _addUnderlay(subcmd, opts, args, callback) {
+    var backendOpts;
+    try {
+        backendOpts = translateOpts(opts, {
+            cn: 'cn_id',
+            ip: 'ip'
+        });
+    } catch (transOpts) {
+        return callback(transOpts);
+    }
+
+    backend.addUnderlayMapping(backendOpts, callback);
+};
+
+PortolanCLI.prototype['do_add-underlay'].options = [
+    OPTS.cn,
+    OPTS.ip,
+];
+
+var cli = new PortolanCLI();
+cmdln.main(cli);
