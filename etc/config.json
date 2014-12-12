@@ -2,5 +2,5 @@
     "backend": "json",
     "jsonDir": "/var/tmp/portolan-json",
     "logLevel": "debug",
-    "port": 4790
+    "port": 1296
 }
