@@ -17,7 +17,7 @@ PATH=/usr/sbin:/usr/bin; export PATH
 
 case "$1" in
 'start')
-    /usr/bin/ctrun -l child -o noorphan /opt/smartdc/docker/build/node/bin/node /opt/smartdc/docker/lib/portolan.js &
+    /usr/bin/ctrun -l child -o noorphan /opt/smartdc/portolan/build/node/bin/node /opt/smartdc/portolan/server.js &
     ;;
 
 'stop')
