@@ -89,6 +89,7 @@ release: all
 	# XXX add node_modules back when it exists.
 	cp -r \
 		$(TOP)/package.json \
+		$(TOP)/bin \
 		$(TOP)/etc \
 		$(TOP)/lib \
 		$(TOP)/node_modules \
