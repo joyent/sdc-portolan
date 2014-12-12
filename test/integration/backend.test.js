@@ -33,8 +33,10 @@ function createStream() {
 
 test('setup', function (t) {
     SHARED = MorayStore.init({
-        host: process.env.MORAY_HOST || '127.0.0.1',
-        port: process.env.MORAY_PORT || 2020,
+        moray: {
+            host: process.env.MORAY_HOST || '127.0.0.1',
+            port: process.env.MORAY_PORT || 2020,
+        },
         log: LOG
     }, function (err) {
         t.ifError(err);
