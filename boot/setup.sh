@@ -22,8 +22,7 @@ source /opt/smartdc/boot/lib/util.sh
 CONFIG_AGENT_LOCAL_MANIFESTS_DIRS=/opt/smartdc/$role
 sdc_common_setup
 
-# XXX - no actual service yet.
-# /usr/sbin/svccfg import /opt/smartdc/$role/smf/manifests/portolan.xml
+/usr/sbin/svccfg import /opt/smartdc/$role/smf/manifests/portolan.xml
 
 # Log rotation.
 sdc_log_rotation_add amon-agent /var/svc/log/*amon-agent*.log 1g
