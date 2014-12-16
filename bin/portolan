@@ -183,7 +183,7 @@ PortolanCLI.prototype['do_add-underlay'] =
 
 PortolanCLI.prototype['do_add-underlay'].options = [
     OPTS.cn,
-    OPTS.ip,
+    OPTS.ip
 ];
 
 var cli = new PortolanCLI();

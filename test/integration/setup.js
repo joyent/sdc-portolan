@@ -22,7 +22,7 @@ var common = require('../../lib/common.js');
 
 var log = bunyan.createLogger({
     name: 'moray',
-    level: 'INFO',
+    level: process.env.LOG_LEVEL || 'INFO',
     stream: process.stdout,
     serializers: bunyan.stdSerializers
 });
@@ -59,12 +59,14 @@ var underlay = [
 function setup(cb) {
     vasync.pipeline({funcs:[
         function createBuckets(_, pipelinecb) {
+            log.debug('backend init');
             backend.init(config, pipelinecb);
         },
 
         function insertUnderlay(_, pipelinecb) {
             vasync.forEachPipeline({
                 func: function insertUnderlayRec(rec, recCb) {
+                    log.debug({rec: rec}, 'inserting underlay record');
                     backend.addUnderlayMapping(rec.value, recCb);
                 },
                 inputs: underlay
@@ -74,6 +76,7 @@ function setup(cb) {
         function insertOverlay(_, pipelinecb) {
             vasync.forEachPipeline({
                 func: function insertOverlayRec(rec, recCb) {
+                    log.debug({rec: rec}, 'inserting overlay record');
                     backend.addOverlayMapping(rec.value, recCb);
                 },
                 inputs: overlay
@@ -82,8 +85,9 @@ function setup(cb) {
 
     ]}, function (err) {
         if (err) {
-            console.log(err);
+            log.error(err, 'setup error');
         }
+        log.debug('setup complete');
         cb();
     });
 }
@@ -91,19 +95,52 @@ function setup(cb) {
 
 function teardown(cb) {
     vasync.pipeline({funcs:[
-        function delBuckets(_, pipelinecb) {
+        function backendInit(_, pipelinecb) {
+            log.debug('backend init');
+            backend.init(config, pipelinecb);
+        },
+
+        function removeOverlay(_, pipelinecb) {
             vasync.forEachPipeline({
-                func: function delbucket(bucket, bucketcb) {
-                    console.log('deleting bucket ' + bucket.name);
-                    client.delBucket(bucket.name, bucketcb);
+                func: function removeOverlayRec(rec, recCb) {
+                    log.debug({rec: rec}, 'removing overlay record');
+                    backend.removeOverlayMapping(rec.value, function (err) {
+                        if (err) {
+                            log.error(err, 'Error removing overlay mapping');
+                        }
+
+                        // Don't fail on the first error - keep trying for
+                        // all records
+                        recCb();
+                    });
                 },
-                inputs: tables
+                inputs: overlay
+            }, pipelinecb);
+        },
+
+        function removeUnderlay(_, pipelinecb) {
+            vasync.forEachPipeline({
+                func: function removeUnderlayRec(rec, recCb) {
+                    log.debug({rec: rec}, 'removing underlay record');
+                    backend.removeUnderlayMapping(rec.value, function (err) {
+                        if (err) {
+                            log.error(err, 'Error removing underlay mapping');
+                        }
+
+                        // Don't fail on the first error - keep trying for
+                        // all records
+                        recCb();
+                    });
+                },
+                inputs: underlay
             }, pipelinecb);
         }
+
     ]}, function (err) {
         if (err) {
-            console.log(err);
+            log.error(err, 'teardown error');
         }
+        log.debug('teardown complete');
         cb();
     });
 }
