@@ -86,7 +86,6 @@ release: all
 	cp -R $(TOP)/boot/* $(RELSTAGEDIR)/root/opt/smartdc/boot/
 	# portolan
 	mkdir -p $(RELSTAGEDIR)/root/opt/smartdc/$(NAME)/build
-	# XXX add node_modules back when it exists.
 	cp -r \
 		$(TOP)/package.json \
 		$(TOP)/bin \
@@ -102,6 +101,8 @@ release: all
 	cp -r \
 		$(TOP)/build/node \
 		$(RELSTAGEDIR)/root/opt/smartdc/$(NAME)/build
+	# Remove the sample config.json so we never pick it up in prod
+	rm $(RELSTAGEDIR)/root/opt/smartdc/$(NAME)/etc/config.json
 	# Trim node
 	rm -rf \
 		$(RELSTAGEDIR)/root/opt/smartdc/$(NAME)/build/node/bin/npm \

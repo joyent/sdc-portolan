@@ -1,5 +1,5 @@
 {
-    "backend": "moray",
+    "backend": "json",
     "jsonDir": "/var/tmp/portolan-json",
     "logLevel": "debug",
     "moray": {

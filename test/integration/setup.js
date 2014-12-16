@@ -26,6 +26,7 @@ var log = bunyan.createLogger({
     stream: process.stdout,
     serializers: bunyan.stdSerializers
 });
+config.backend = 'moray';
 config.log = log;
 
 var overlay = [
