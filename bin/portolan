@@ -15,9 +15,12 @@
  */
 
 var assert = require('assert-plus');
-var backend;
+var backend = require('../lib/backend');
+var bunyan = require('bunyan');
 var cmdln = require('cmdln');
+var common = require('../lib/common');
 var config = require('../etc/config.json');
+var types = require('../lib/types');
 var util = require('util');
 var VError = require('verror').VError;
 
@@ -63,13 +66,6 @@ var OPTS = {
 
 // --- Internal
 
-
-
-function loadBackend() {
-    assert.object(config, 'config');
-    assert.string(config.backend, 'config.backend');
-    backend = require('../lib/backend/' + config.backend);
-}
 
 
 /**
@@ -120,12 +116,13 @@ util.inherits(PortolanCLI, cmdln.Cmdln);
  * Run before the subcommand methods - overall initialization
  */
 PortolanCLI.prototype.init = function _init(opts, args, callback) {
-    try {
-        loadBackend();
-    } catch (backErr) {
-        return callback(backErr);
-    }
+    backend.load(config);
 
+    var log = bunyan.createLogger({
+        name: 'portolan',
+        level: process.env.LOG_LEVEL || 'fatal'
+    });
+    config.log = log;
     backend.init(config, callback);
 };
 
@@ -141,11 +138,15 @@ PortolanCLI.prototype['do_add-overlay'] =
             cn: 'cn_id',
             ip: 'ip',
             mac: 'mac',
-            vid: 'vnet_id'
+            vid: 'vid'
         });
-    } catch (transOpts) {
-        return callback(transOpts);
+        common.validate.opts(backendOpts);
+    } catch (optsErr) {
+        return callback(optsErr);
     }
+
+    backendOpts.ip = common.IPv6obj(backendOpts.ip);
+    backendOpts.mac = common.macToInt(backendOpts.mac);
 
     backend.addOverlayMapping(backendOpts, callback);
 };
@@ -169,9 +170,13 @@ PortolanCLI.prototype['do_add-underlay'] =
             cn: 'cn_id',
             ip: 'ip'
         });
-    } catch (transOpts) {
-        return callback(transOpts);
+        common.validate.opts(backendOpts);
+    } catch (optsErr) {
+        return callback(optsErr);
     }
+
+    backendOpts.ip = common.IPv6obj(backendOpts.ip);
+    backendOpts.port = types.VXLAN_PORT;
 
     backend.addUnderlayMapping(backendOpts, callback);
 };

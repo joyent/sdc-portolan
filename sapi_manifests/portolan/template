@@ -1,9 +1,8 @@
 {
     "backend": "moray",
-    "jsonDir": "/var/tmp/portolan-json",
     "logLevel": "debug",
     "moray": {
-        "host": "10.99.99.17",
+        "host": "{{{MORAY_SERVICE}}}",
         "port": 2020
     },
     "port": 1296

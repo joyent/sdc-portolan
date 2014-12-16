@@ -1,0 +1,5 @@
+{
+    "name": "portolan",
+    "path": "/opt/smartdc/portolan/etc/config.json",
+    "post_cmd": "svcadm restart portolan"
+}

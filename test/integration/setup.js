@@ -12,146 +12,44 @@
  * Bootstraps Moray with some data used in backend tests.
  */
 
+var backend = require('../../lib/backend/moray');
 var bunyan = require('bunyan');
+var config = require('../../etc/config');
 var moray = require('moray');
 var vasync = require('vasync');
 
-var common = require('../lib/common.js');
+var common = require('../../lib/common.js');
 
-var client = moray.createClient({
-    host: process.env.MORAY_HOST || '127.0.0.1',
-    port: process.env.MORAY_PORT || 2020,
-    log: bunyan.createLogger({
-        name: 'moray',
-        level: 'INFO',
-        stream: process.stdout,
-        serializers: bunyan.stdSerializers
-    })
+var log = bunyan.createLogger({
+    name: 'moray',
+    level: 'INFO',
+    stream: process.stdout,
+    serializers: bunyan.stdSerializers
 });
+config.log = log;
 
-var vnet_mac_ip = {
-    name: 'vnet_mac_ip',
-    cfg: {
-        index: {
-            mac: {
-                type: 'number'
-            },
-            ip: {
-                type: 'string'
-            },
-            cn_id: {
-                type: 'string'
-            },
-            vid: {
-                type: 'number'
-            },
-            version: {
-                type: 'number'
-            },
-            deleted: {
-                type: 'boolean'
-            }
-        },
-        options: {
-            version: 0
-        }
-    }
-};
-
-var portolan_underlay_mappings = {
-    name: 'portolan_underlay_mappings',
-    cfg: {
-        index: {
-            cn_id: {
-                type: 'string'
-            },
-            ip: {
-                type: 'string'
-            },
-            port: {
-                type: 'number'
-            }
-        },
-        options: {
-            version: 0
-        }
-    }
-};
-
-var cn_net_events = {
-    name: 'cn_net_events',
-    cfg: {
-        index: {
-            cn_id: {
-                type: 'string'
-            },
-            vid: {
-                type: 'number'
-            },
-            id: {
-                type: 'number'
-            }
-        },
-        options: {
-            version: 0
-        }
-    }
-};
-
-var napi_vnetworks = {
-    name: 'napi_vnetworks',
-    cfg: {
-        index: {
-            vid: {
-                type: 'string'
-            },
-            owner_uuid: {
-                type: 'string'
-            },
-            start_ip: {
-                type: 'string'
-            },
-            end_ip: {
-                type: 'string'
-            },
-            subnet_start: {
-                type: 'string'
-            },
-            subnet_bits: {
-                type: 'number'
-            }
-        },
-        options: {
-            version: 0
-        }
-    }
-};
-
-var tables = [
-    vnet_mac_ip,
-    portolan_underlay_mappings,
-    cn_net_events,
-    napi_vnetworks
-];
-
-var rows = [
+var overlay = [
     {
-        bucket: 'vnet_mac_ip',
-        key: '10.0.0.1,12340',
         value: {
             mac: common.macToInt('00:0a:95:9d:68:16'),
-            ip: '10.0.0.1',
+            ip: common.IPv6obj('10.0.0.1'),
             cn_id: 'b4e5ff64-7b40-11e4-a6fa-d34c824a42cd',
             vid: 12340,
             deleted: false
         }
-    },
+    }
+];
+
+overlay.forEach(function (rec) {
+    rec.key = [rec.value.ip.toString(), rec.value.vid].join(',');
+});
+
+var underlay = [
     {
-        bucket: 'portolan_underlay_mappings',
         key: 'b4e5ff64-7b40-11e4-a6fa-d34c824a42cd',
         value: {
             cn_id: 'b4e5ff64-7b40-11e4-a6fa-d34c824a42cd',
-            ip: '192.168.1.1',
+            ip: common.IPv6obj('192.168.1.1'),
             port: 123
         }
     }
@@ -160,23 +58,27 @@ var rows = [
 function setup(cb) {
     vasync.pipeline({funcs:[
         function createBuckets(_, pipelinecb) {
+            backend.init(config, pipelinecb);
+        },
+
+        function insertUnderlay(_, pipelinecb) {
             vasync.forEachPipeline({
-                func: function createBucket(bucket, bucketcb) {
-                    console.log('creating bucket ' + bucket.name);
-                    client.createBucket(bucket.name, bucket.cfg, bucketcb);
+                func: function insertUnderlayRec(rec, recCb) {
+                    backend.addUnderlayMapping(rec.value, recCb);
                 },
-                inputs: tables
+                inputs: underlay
             }, pipelinecb);
         },
-        function insertRows(_, pipelinecb) {
+
+        function insertOverlay(_, pipelinecb) {
             vasync.forEachPipeline({
-                func: function insertRow(row, rowcb) {
-                    console.log('inserting row ' + row.key);
-                    client.putObject(row.bucket, row.key, row.value, rowcb);
+                func: function insertOverlayRec(rec, recCb) {
+                    backend.addOverlayMapping(rec.value, recCb);
                 },
-                inputs: rows
+                inputs: overlay
             }, pipelinecb);
         }
+
     ]}, function (err) {
         if (err) {
             console.log(err);
@@ -207,16 +109,14 @@ function teardown(cb) {
 
 
 function main() {
-    client.on('connect', function () {
-        if (process.argv[2] === 'setup') {
-            setup(client.close.bind(client));
-        } else if (process.argv[2] === 'teardown') {
-            teardown(client.close.bind(client));
-        } else {
-            console.error('usage: ' + process.argv[1] + ' [setup|teardown]');
-            process.exit(1);
-        }
-    });
+    if (process.argv[2] === 'setup') {
+        setup(backend.close);
+    } else if (process.argv[2] === 'teardown') {
+        teardown(backend.close);
+    } else {
+        console.error('usage: ' + process.argv[1] + ' [setup|teardown]');
+        process.exit(1);
+    }
 }
 
 if (require.main === module) {

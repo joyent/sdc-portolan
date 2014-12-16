@@ -9,6 +9,7 @@
  */
 
 var bunyan = require('bunyan');
+var config = require('../../etc/config');
 var moray = require('moray');
 var test = require('tape');
 
@@ -34,8 +35,8 @@ function createStream() {
 test('setup', function (t) {
     SHARED = MorayStore.init({
         moray: {
-            host: process.env.MORAY_HOST || '127.0.0.1',
-            port: process.env.MORAY_PORT || 2020,
+            host: process.env.MORAY_HOST || config.moray.host,
+            port: process.env.MORAY_PORT || config.moray.port
         },
         log: LOG
     }, function (err) {
@@ -83,7 +84,7 @@ test('vl2', function (t) {
         svp_msg: {
             vl2_status: 0,
             vl2_port: 123,
-            vl2_addr: common.stringToIp('192.168.1.1')
+            vl2_addr: common.IPv6obj('192.168.1.1')
         }
     };
 
@@ -114,7 +115,7 @@ test('vl3', function (t) {
             vl3_status: 0,
             vl3_mac: common.macToInt('00:0a:95:9d:68:16'),
             vl3_port: 123,
-            vl3_addr: common.stringToIp('192.168.1.1')
+            vl3_addr: common.IPv6obj('192.168.1.1')
         }
     };
 
