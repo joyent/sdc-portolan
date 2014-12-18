@@ -14,14 +14,14 @@
  * Portolan CLI
  */
 
-var assert = require('assert-plus');
-var backend = require('../lib/backend');
-var bunyan = require('bunyan');
-var cmdln = require('cmdln');
-var common = require('../lib/common');
+var mod_backend = require('../lib/backend');
+var mod_bunyan = require('bunyan');
+var mod_client = require('../lib/client');
+var mod_cmdln = require('cmdln');
+var mod_common = require('../lib/common');
 var config = require('../etc/config.json');
-var types = require('../lib/types');
-var util = require('util');
+var mod_types = require('../lib/types');
+var mod_util = require('util');
 var VError = require('verror').VError;
 
 
@@ -43,6 +43,12 @@ var OPTS = {
         help: 'Print help and exit'
     },
 
+    host: {
+        names: [ 'host' ],
+        type: 'string',
+        help: 'Portolan host to connect to'
+    },
+
     ip: {
         names: [ 'ip' ],
         type: 'string',
@@ -53,6 +59,12 @@ var OPTS = {
         names: [ 'mac' ],
         type: 'string',
         help: 'MAC address'
+    },
+
+    port: {
+        names: [ 'port' ],
+        type: 'positiveInteger',
+        help: 'Portolan host port'
     },
 
     vid: {
@@ -66,6 +78,14 @@ var OPTS = {
 
 // --- Internal
 
+
+
+/**
+ * Output some pretty JSON
+ */
+function json(obj) {
+    console.log(JSON.stringify(obj, null, 2));
+}
 
 
 /**
@@ -100,7 +120,7 @@ function translateOpts(opts, trans) {
 
 
 function PortolanCLI() {
-    cmdln.Cmdln.call(this, {
+    mod_cmdln.Cmdln.call(this, {
         name: 'portolan',
         description: 'portolan CLI',
         options: [
@@ -109,21 +129,20 @@ function PortolanCLI() {
     });
 }
 
-util.inherits(PortolanCLI, cmdln.Cmdln);
+mod_util.inherits(PortolanCLI, mod_cmdln.Cmdln);
 
 
 /**
  * Run before the subcommand methods - overall initialization
  */
 PortolanCLI.prototype.init = function _init(opts, args, callback) {
-    backend.load(config);
+    mod_backend.load(config);
 
-    var log = bunyan.createLogger({
+    config.log = mod_bunyan.createLogger({
         name: 'portolan',
         level: process.env.LOG_LEVEL || 'fatal'
     });
-    config.log = log;
-    backend.init(config, callback);
+    mod_backend.init(config, callback);
 };
 
 
@@ -140,15 +159,15 @@ PortolanCLI.prototype['do_add-overlay'] =
             mac: 'mac',
             vid: 'vid'
         });
-        common.validate.opts(backendOpts);
+        mod_common.validate.opts(backendOpts);
     } catch (optsErr) {
         return callback(optsErr);
     }
 
-    backendOpts.ip = common.IPv6obj(backendOpts.ip);
-    backendOpts.mac = common.macToInt(backendOpts.mac);
+    backendOpts.ip = mod_common.IPv6obj(backendOpts.ip);
+    backendOpts.mac = mod_common.macToInt(backendOpts.mac);
 
-    backend.addOverlayMapping(backendOpts, callback);
+    mod_backend.addOverlayMapping(backendOpts, callback);
 };
 
 PortolanCLI.prototype['do_add-overlay'].options = [
@@ -170,15 +189,15 @@ PortolanCLI.prototype['do_add-underlay'] =
             cn: 'cn_id',
             ip: 'ip'
         });
-        common.validate.opts(backendOpts);
+        mod_common.validate.opts(backendOpts);
     } catch (optsErr) {
         return callback(optsErr);
     }
 
-    backendOpts.ip = common.IPv6obj(backendOpts.ip);
-    backendOpts.port = types.VXLAN_PORT;
+    backendOpts.ip = mod_common.IPv6obj(backendOpts.ip);
+    backendOpts.port = mod_types.VXLAN_PORT;
 
-    backend.addUnderlayMapping(backendOpts, callback);
+    mod_backend.addUnderlayMapping(backendOpts, callback);
 };
 
 PortolanCLI.prototype['do_add-underlay'].options = [
@@ -186,5 +205,93 @@ PortolanCLI.prototype['do_add-underlay'].options = [
     OPTS.ip
 ];
 
+
+/**
+ * Do a L2 lookup
+ */
+PortolanCLI.prototype['do_vl2-lookup'] =
+    function _vl2Req(subcmd, opts, args, callback) {
+    var connOpts;
+    try {
+        connOpts = translateOpts(opts, {
+            mac: 'mac',
+            vid: 'vid'
+        });
+        mod_common.validate.opts(connOpts);
+    } catch (optsErr) {
+        return callback(optsErr);
+    }
+
+    connOpts.host = opts.host || 'localhost';
+    connOpts.port = opts.port || config.port;
+
+    var client = mod_client.connect(connOpts, function _afterVl2Conn(err) {
+        if (err) {
+            return callback(err);
+        }
+
+        client.vl2Req(connOpts, function (err2, res) {
+            if (err2) {
+                return callback(err2);
+            }
+
+            json(res);
+            return callback();
+        });
+    });
+};
+
+PortolanCLI.prototype['do_vl2-lookup'].options = [
+    OPTS.host,
+    OPTS.mac,
+    OPTS.port,
+    OPTS.vid
+];
+
+
+/**
+ * Do a L3 lookup
+ */
+PortolanCLI.prototype['do_vl3-lookup'] =
+    function _vl3Req(subcmd, opts, args, callback) {
+    var connOpts;
+    try {
+        connOpts = translateOpts(opts, {
+            ip: 'ip',
+            vid: 'vid'
+        });
+        mod_common.validate.opts(connOpts);
+    } catch (optsErr) {
+        return callback(optsErr);
+    }
+
+    connOpts.host = opts.host || 'localhost';
+    connOpts.ip = mod_common.IPv6obj(opts.ip);
+    connOpts.port = opts.port || config.port;
+
+    var client = mod_client.connect(connOpts, function _afterVl2Conn(err) {
+        if (err) {
+            return callback(err);
+        }
+
+        client.vl3Req(connOpts, function (err2, res) {
+            if (err2) {
+                return callback(err2);
+            }
+
+            json(res);
+            return callback();
+        });
+    });
+};
+
+PortolanCLI.prototype['do_vl3-lookup'].options = [
+    OPTS.host,
+    OPTS.ip,
+    OPTS.port,
+    OPTS.vid
+];
+
+
 var cli = new PortolanCLI();
-cmdln.main(cli);
+mod_cmdln.main(cli);
