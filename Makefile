@@ -40,6 +40,7 @@ CTF_TYPES=-t svp_req_t \
 	-t svp_lrm_req_t \
 	-t svp_lrm_ack_t \
 	-t svp_shootdown_t
+TAPE=node_modules/.bin/tape
 
 NODE_PREBUILT_VERSION=v0.10.32
 ifeq ($(shell uname -s),SunOS)
@@ -133,6 +134,18 @@ src/types: src/types.c src/libvarpd_svp_prot.h
 
 etc/svp-types.json: src/types
 	$(CTF2JSON) -f src/types $(CTF_TYPES) > $@
+
+.PHONY: test
+test: $(TAPE)
+	@(for F in test/unit/*.test.js; do \
+		echo "# $$F" ;\
+		$(TAPE) $$F ;\
+		[[ $$? == "0" ]] || exit 1; \
+	done)
+
+$(TAPE): | $(NPM_EXEC)
+	$(NPM) install
+
 
 include ./tools/mk/Makefile.deps
 ifeq ($(shell uname -s),SunOS)

@@ -89,6 +89,15 @@ function json(obj) {
 
 
 /**
+ * Set the hostname and port for client opts
+ */
+function setClientOpts(opts, clientOpts) {
+    clientOpts.host = opts.host || 'localhost';
+    clientOpts.port = opts.port || config.port;
+}
+
+
+/**
  * Rename the options in {Object} opts using {Object} trans.  Throw an error
  * if any options are missing.
  */
@@ -207,6 +216,36 @@ PortolanCLI.prototype['do_add-underlay'].options = [
 
 
 /**
+ * Ping the portolan server
+ */
+PortolanCLI.prototype['do_ping'] =
+    function _ping(subcmd, opts, args, callback) {
+    var connOpts = {};
+    setClientOpts(opts, connOpts);
+
+    var client = mod_client.connect(connOpts, function _afterVl2Conn(err) {
+        if (err) {
+            return callback(err);
+        }
+
+        client.ping(function (err2, res) {
+            if (err2) {
+                return callback(err2);
+            }
+
+            json(res);
+            return callback();
+        });
+    });
+};
+
+PortolanCLI.prototype['do_ping'].options = [
+    OPTS.host,
+    OPTS.port
+];
+
+
+/**
  * Do a L2 lookup
  */
 PortolanCLI.prototype['do_vl2-lookup'] =
@@ -222,9 +261,7 @@ PortolanCLI.prototype['do_vl2-lookup'] =
         return callback(optsErr);
     }
 
-    connOpts.host = opts.host || 'localhost';
-    connOpts.port = opts.port || config.port;
-
+    setClientOpts(opts, connOpts);
     var client = mod_client.connect(connOpts, function _afterVl2Conn(err) {
         if (err) {
             return callback(err);
@@ -265,9 +302,8 @@ PortolanCLI.prototype['do_vl3-lookup'] =
         return callback(optsErr);
     }
 
-    connOpts.host = opts.host || 'localhost';
+    setClientOpts(opts, connOpts);
     connOpts.ip = mod_common.IPv6obj(opts.ip);
-    connOpts.port = opts.port || config.port;
 
     var client = mod_client.connect(connOpts, function _afterVl2Conn(err) {
         if (err) {

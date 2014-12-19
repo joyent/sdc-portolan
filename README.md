@@ -8,6 +8,30 @@
     Copyright (c) 2014, Joyent, Inc.
 -->
 
-# Portolan
+# sdc-portolan
 
 SDC service for looking up VXLAN underlay devices.
+
+
+# Development
+
+To run style and lint checks:
+
+    make check
+
+To run all checks and tests:
+
+    make prepush
+
+
+# Testing
+
+## Unit tests
+
+To run all tests:
+
+    make test
+
+To run an individual test:
+
+    node ./test/unit/testname.test.js
