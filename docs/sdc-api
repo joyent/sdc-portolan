@@ -1,0 +1,597 @@
+# SDC API considerations for Overlay Devices
+
+With the advent of overlay networking, we need to make API changes
+across the entire SDC stack. This document discusses what this entails
+and what's involved in using it. To take this apart, we're going to go
+through a bit of a roundabout path, we're going to start with the new
+public APIs that we might want to expose in CloudAPI, and from there,
+discuss how that translates down into the various APIs, agents, and the
+platform itself.
+
+## Top Level CloudAPI APIs
+
+I suggest that we do something like the following:
+
+/my/fabrics/vlans/:uuid/networks/:uuid
+
+I think we want to have a top level thing like /my/fabrics, even if it's
+not that name, so that way we can later add other networking concepts
+into this. For example, at some point, things like vrouters or NATs, or
+whatever need to show up under these places. Some things won't fall
+under that, therefore we can just put them under the top of the CloudAPI
+name space of /my/.
+
+Let's give more detail here:
+
+### VLANs
+
+GET	/my/fabrics/vlans
+
+	Returns the list of vlan objects on that fabric
+
+PUT	/my/fabrics/vlans
+
+	Create a VLAN, requires the following fields set:
+
+	{
+		"name":		<String>
+		"vlan_id":	<Number, 0-4095>
+	}
+
+GET	/my/fabrics/vlans/:uuid
+
+	Returns a blob for a VLAN, eg:
+
+	{
+		"name":		<String>,
+		"uuid":		<UUID>,
+		"vlan_id":	<Number, 0-4095>
+	}
+
+DELETE	/my/fabrics/vlans/:uuid
+
+	Delete a VLAN from the system. This is not allowed to occur if
+	there are any networks or future things still active on this
+	VLAN.
+
+PUT	/my/fabrics/vlans/:uuid
+
+	Allows you to replcae certain fields. The only fields that can
+	be overwritten are the following:
+
+	{
+		"name":		<String>
+	}
+
+
+### Networks
+
+GET	/my/fabrics/vlans/:uuid/networks/
+
+	Returns the list of network objects on the specified vlan in a
+	fabric.
+
+PUT	/my/fabrics/vlans/:uuid/networks
+
+	Creates a network, requires the following fields:
+
+	{
+		"name":			<String>,
+		"subnet":		<CIDR block>,
+		"provision_start_ip":	<IP>,
+		"provision_end_ip":	<IP>
+	}
+
+	It allows the following optional fields:
+
+	{
+		"gateway":		<IP>,
+		"resolvers":		<IP Array>,
+		"routes":		<Route Objects>,
+		"description":		<String>
+	}
+
+GET	/my/fabrics/vlans/:uuid/networks/:uuid
+
+	Gets information about the network, given a UUID.
+
+
+	{
+		"name":			<String>,
+		"uuid":			<UUID>,
+		"subnet":		<CIDR block>,
+		"provision_start_ip":	<IP>,
+		"provision_end_ip":	<IP>,
+		"gateway":		<IP>,
+		"resolvers":		<IP Array>,
+		"routes":		<Route Objects>,
+		"description":		<String>
+	}
+
+PUT	/my/fabrics/vlans/:uuid/networks/:uuid
+
+	Allows you to update a network, what's allowed is based on what
+	NAPI supports, the less the better / simpler for us.
+
+DELETE	/my/fabrics/vlans/:uuid/networks/:uuid
+
+	Removes a network, assuming there are no interfaces or IPs on
+	top of it.
+
+Anything below this, we follow NAPI convention.
+
+In addition to the above, we need to make sure that everything there is 
+
+### Provisioning
+
+For provisioning, we need to give people a little more flexibility for
+how networking works. In an effort to give a bit more flexibility here,
+I'm going to describe a desired format, and then go back and talk about
+this in the context of backwards compatibility.
+
+The primary idea here is that we want to be *Interface* centric, not
+*Network Centric*. An Interface looks something like the following JSON
+Blob:
+
+[
+	{
+		"ipv4_uuid":	<IPv4 Network UUID>,
+		"ipv4_ips":	[ Optional Array of IPs ],
+		"ipv6_uuid":	<IPv6 Network UUID>,
+		"ipv6_ips":	[ Optional Array of IPs ]
+	},
+	{
+		"ipv4_uuid":	<IPv4 Network UUID>,
+		"ipv4_count":	4
+	}	
+]
+
+The idea of this is that we have an array of network interfaces to
+provision to a VM. Each interface can support multiple networks,
+generally one IPv4 and one IPv6 network. We identify that by having an
+object that contains a network UUID and optionally either a number of IP addresses to be
+allocated or a specific array of IP addresses to be assigned. If the
+specific IP addresses requested are not available in the network, or
+there are an insufficient number of free IPs in the network, then we
+must fail the provision. If neither ips or count is specified, then it's
+treated as though count has been specified to one, the current behavior
+of passing a network through a CloudAPI provision.
+
+If we wanted, we could also allow a bunch of sugar to make this simpler
+and backwards compatible with the existing 'networks' option. In that
+case, the following original networks option:
+
+[ <uuid_0>, <uuid_1>, ... ]
+
+would translate into the new thing of:
+
+[
+	{
+		"ipv4_uuid":	<uuid_0>,
+		"ipv4_count":	1
+	},
+	{
+		"ipv4_uuid":	<uuid_1>,
+		"ipv4_count":	1
+	}
+]
+
+### Existing Endpoints
+
+The existing CloudAPI networks of /my/networks and /my/networks/:uuid.
+Here, we want to make sure that all of a customer's overlay networks
+show up under /my/networks. In addition, we want to add a new member to
+the GET /my/networks/:uuid information:
+
+	"fabric":	<boolean>
+
+The fabric entry, means that the newtork belongs to a fabric. This also
+implicitly means that the "public" field is aslo set to 'false'.
+
+#### Thoughts on Cloud API
+
+I'm not personally completely sold on the syntax here for all of this,
+but I want to make sure we're thinking about the cases of IPv6 networks
+and multiple IP address, for when the time comes that we need to handle
+that. Given that we have to deal with the case of a user requesting an
+IP address, it seems like the modest amount of work here might be
+worthwhile.
+
+## Backend Implications
+
+This has a bunch of implications for what we deal with today. I'll try
+to go through all of these, but may miss some of them. Let's start with
+something that's more of a cruel reality: the MTU.
+
+### MTU
+
+The MTU, or maximum transmission unit, describes the size of the payload
+for an Ethernet frame. The default size is 1500 bytes. The term jumbo
+frames is usually used to describe a size that is larger than 1500
+bytes, the general payload size used here is 9000 bytes; however, it can
+be anything ranging from 1501-16k bytes.
+
+Because overlay networks are encapsulating packets, the underlay network
+needs to be able to transmit not just the full encapsulated packet, but
+also its own. This requires that the underlay network's network
+interfaces have an MTU that is greater than overlay networks MTU by the
+size of an Ethernet + VLAN Header (for the encapsulated frame), and the
+VXLAN, UDP, and IP headers for the underlay network. To give ourselves a
+bit of a safety net, we're going to suggest that this range is around
+100 bytes. Therefore, a hard requirement is in SDC:
+
+overlay network mtu <= underlay network mtu + 100
+
+For SDC, we're going to suggest that the minimum MTU of a network is 576
+bytes -- the minimum MTU that an etherstub requires. The maximum MTU
+we're going to suggest is 9000. As that's a common stopping point for
+NICs and related networking hardware. We should make sure that both of
+these constants are only in one place
+
+This means that we need to be able to configure NAPI networks with an
+MTU. I propose that this field is not something that users can modify
+and instead is only modifiable by operators, eg. it is not exposed as
+writeable via CloudAPI, if it is exposed at all.
+
+This has ramifications through the following components of the stack:
+
+  o  NAPI Networks
+  o  NAPI Network Tags
+  o  CNAPI (possibly)
+  o  Booter
+  o  CN platform boot code
+  o  Defaults
+
+#### NAPI Changes
+
+The heart of all of this is adding a new parameter to NAPI. This
+parameter is:
+
+	"mtu":	<Number 576-9000>
+
+This parameter describes the MTU of a network. All interfaces in this
+network *must* be at the prescribed MTU.
+
+When it comes to changing the MTU of a network, that's a tricky
+operation. I'm not sure we want to support it. From an OS perspective,
+to be able to change the MTU of a VNIC, the MTU of the device it's
+created on top of needs to be set to the highest value you want before
+adding devices. This is due to limitations in our drivers (OS-3054,
+OS-3055, OS-3056 are for what we use in SDC).
+
+That gives us two options:
+
+  1) Only ever allow the MTU to shrink for a network (it's always
+     possible  to lower the MTU of a vnic once created).
+
+  2) Allow the MTU to grow, if and only if, its nic tag allows for a
+     higher MTU (see later section on nic tags)
+
+That said, even with both of those, it may still not be something we
+want to support. However, since customers will likely complain about it,
+we're going to opt to go with option 2 for now.
+
+##### Defaults
+
+We should always default to an MTU of 1500 when we are dealing with a
+non-overlay network. For overlay networks, see the section on defaults.
+
+##### NAPI Backfill
+
+As part of this, we'll have to backfill this information into existing
+NAPI networks. This is straightforward, all of the existing networks
+*must* have their MTU set to 1500.
+
+##### Constraints on Network Pools
+
+In addition, this adds a constraint on a network pool, that all networks
+in the pool *must* share the same MTU. Similarly, we should not allow
+multiple private overlay networks that belong to different overlays to
+be a part of the same pool.
+
+#### NIC Tags
+
+Recall that NIC tags are ways to identify logical sets of interfaces
+that exist on the system. Note that a network that has a larger than
+default MTU, cannot be provisioned on an interface that has not been
+configured for that MTU. Again, because of driver bugs, we cannot cause
+those kinds of changes to happen dynamically and they must be done
+before any interfaces or devices have been created.
+
+As such, the solution to this is to have network tags support an MTU.
+Work in nictagadm(1M) and the platform already allows this (OS-2999,
+OS-3063, OS-3057). However, SDC doesn't have a notion of this. So let's
+make this explicitly concrete. NIC tags need to have the following
+parameter set:
+
+	"mtu":	<Number 576-9000>
+
+When a CN boots up, it looks at all off the NIC tags that have been
+defined on it for a given interface and sets the MTU of that interface
+to the maximum.
+
+This also has implications on adding a NIC tag. If we add a NIC tag to a
+CN that has not programmed its interfaces higher, than it cannot be
+applied dynamically and the CN will have to be rebooted.
+
+##### Admin Network
+
+As a special case, we should ensure that the admin nic tag cannot be
+increased to anything beyond 1500 at this time and enforce that in NAPI.
+We may opt to change that in the future, but that requires thinking
+through booting, aggrs, etc.
+
+##### Backfill
+
+As part of this we'll have to backfill this information into the
+existing nic tags buckets. This is straightforward, all of the existing
+nic tags *must* have their MTU set to 1500.
+
+
+#### CNAPI
+
+Here, we don't really need to change CNAPI per se, rather we need to
+ensure that the current MTU of devices is known. The best way to cause
+this to happen is to have sysinfo update itself.
+
+#### Booter
+
+Here, booter would handle sending out the set of nic tags as part of the
+boot information in the new boot time modules form which will be
+discussed a bit later on.
+
+#### CN platform boot code
+
+We need to make sure that some combination of sysinfo and the start up
+scripts learn how to use the new form of network information that we'd
+like to pass in through bootfs. We just need to make sure that it
+sources it from the new spots, which should be fairly straightforward.
+
+
+#### Defaults
+
+I think that it will be useful as part of using sdcadm to set things up
+to make sure that we create sane defaults for overlay networks. I would
+propose the following as defaults, that can be overridden at overlay
+network setup time (which is part of post-install).
+
+  default_underlay_mtu=9000
+
+	This value represents the default MTU of the networks that are
+	created for the purpose of being the underlay and requires that
+	as networks are added to the pool for the underlay that it is
+	enforced.
+
+  default_overlay_mtu=8500
+
+	This value represents the default MTU of the private overlay
+	networks that are created. As we don't allow customers to
+	generally control this, having this be a default value seems to
+	make some sense.
+
+By having both of these by configurable values with reasonable defaults,
+a user that ends up in a network that doesn't support jumbo frames could
+reasonable set default_underlay_mtu=1500, default_overlay_mtu=1400.
+Importantly though, once these are set they will need to be locked until
+such a time as we have a software update that can allow for doing all of
+the workflows and management of this sub-system and handling something
+like a MTU update.
+
+
+### Underlay Network Management
+
+To successfully manage the underlay network we have a bunch of different
+things that we need to do. The first, is to allow an operator to create
+and manage these underlay networks and associate them with a CN. To this
+end, we need the following pieces:
+
+  o A new nic tag that should be used for the underlay network
+  o A new network pool that should be used for the underlay network
+  o Ways to associate an underlay NIC with a CN
+
+I propose that we add the following default values that are set by
+sdcadm:
+
+  sdc_underlay_tag
+
+	The name of the underlay network nic tag
+
+  sdc_underlay_pool
+
+	The name of the network pool that is associated with underlay
+	networks.
+
+#### Managing Underlay Networks and Assignments
+
+Here, we need to allow for multiple different networking schemes when it
+comes to the underlay network. I basically see this as their being two
+different modes of operation that operators will want to use.
+
+  1) They create a series of one or more L3 networks and just let CNs
+     be assigned arbitrary addresses from one of those networks, eg.
+     they don't care very much about the underlay assignments.
+
+  2) They create a series of L3 networks and are very specific about the
+     assignments. For example, having an L3 network per rack. There,
+     the actual address and network assigned to a CN is fairly
+     important.
+
+To that end, I'd suggest we have the following tunable in sdcadm:
+
+    underlay_assignment=auto|manual
+
+	This tunable controls the behavior of how we manage the underlay
+	assignments to *new* CNs. The use of 'auto' means that we'll
+	just assign it an address from the existing network pool
+	discussed above. If it is set to manual, that means that we'll
+	not do anything.
+
+In addition to this, I suggest that we have the ability to specify the
+UUID of a NIC in cnapi as an underlay_nic. I believe it's important to
+have this be separate from the sysinfo heartbeating information so that
+way we can determine whether or not it's been set up or not.
+
+In addition to the cnapi control, we will want to add information for
+this to the adminui management pane.
+
+##### Backfilling
+
+We need to have the ability to go ahead and backfill underlay network
+assignments to an existing fleet of CNs, or a subset, thereof. To do so,
+we probably want to have some tool that can leverage the cnapi work
+we're doing above. In addition, there is where having adminui be able to
+handle this on the CN details page helps as well.
+
+If we have some tooling I'd suggest it basically works by taking a list
+of CN UUIDs to automatically assign, or just a way to say everything.
+
+##### Getting info to the CN
+
+In general, we want to be able to pass this in as part of the boot-time
+network information that I describe later on. This will simplify some
+the life of trying to squeeze everything into bootparams. Once it's
+there, we'll process it and create additional VNICs on top of it.
+
+##### Other CN vnic needs
+
+However, it's important that while we're focused on this for the
+underlay network, that the underlay network is not the only such thing
+here. For example, we have the need for CNs which are part of Manta and
+running marlin to be controlled this way. Here we want to address
+tickets like MANTA-2031.
+
+### Boot-time Network Information
+
+The next major change here revolves around how we manage boot-time
+network information. The impetus here is to be able to handle things
+like MANTA-2030 and MANTA-2031, which cover adding additional VNICs and
+routes. We may also want to rejigger information that was coming in from
+DHCP in the form of NET-210, and other DNS information which is set up
+in a way that's a bit, haphazard.
+
+To that end, we should consider passing this in via a boot time module.
+That allows booter to construct a JSON blob and pass it in as a file
+that will show up in the file system under /system/boot. I'd suggest we
+put the file at:
+
+/system/boot/sdc/net.json
+
+As an example, here's how this JSON blob might look:
+
+{
+	"aggrs": [
+		{
+			"name": "aggr0",
+			"macs": [ <mac0>, <mac1> ],
+			"lacp_mode": "active" | "passive" | ...
+		}
+	],
+	"nic_tags": [
+		{
+			"name":	"admin",
+			"mac":	"<mac>",
+			"mtu":	<Number>
+		}, ...
+	],
+	"vnics": [
+		{
+			"tag": "<nic tag>",
+			"ip": "<CIDR>",
+			"vlan": <Number>
+		}, ...
+	],
+	"resolvers": [ <ip0>, <ip1>, ... ],
+	"gateway": "<IP>"
+	"routes": {
+		"<CIDR>": "<IP>",
+		...
+	}
+}
+
+Here, we'd have our start up scripts process all of these in order. eg.
+we'd first have to process aggrs, then nic_tags, then vnics, then the
+rest of the information like resolvers, gateways, and routes. This file
+itself is read-only, so our tools should only use it as a bootstrapping
+mechanism.
+
+We'd want to have booter be able to assemble this information, and that
+suggests that a lot of these should become new entries in CNAPI, which
+set the defaults. Alternatively, we should have a series of defaults
+somewhere or allow defaults to be set based on tags or something else.
+
+The JSON blob was pulled out of some rather brief thinking and
+certainly isn't the best thing in the world, but it gives us something
+to start with and evolve.
+
+### Provisioning
+
+One of the bigger challenges we have here is around the world of
+provisioning. While from a user perspective, this is rather simple, they
+just specify and create their new networks, this gets more complicated
+from a designation perspective.
+
+Theorem: A machine that is being provisioned with a network on an
+overlay device must not only have the networking tag, but it also must
+have an active vnic on the underlay device *and* the platform must
+declare it has the rest of the support necessary.
+
+The reason that all of these are important is that it allows us to
+simplify the upgrade process of a DC. eg. we can give everything the nic
+tag immediately, but only slowly grow the fleet for the rest of this.
+
+I'm not sure on the best way to create this, but it's a big open
+question. Perhaps we want the platform to hearbeat something in sysinfo
+to say that it's been set up for overlay devices? eg. a platform feature
+flag? I dunno. Though in general, I think the platform exporting feature
+flags into sysinfo based on build would be useful.
+
+From here, we have a few different ideas. The first is the notion of
+platform feature flags, this is going to require a bunch of thought, and
+something rm is working on with bmc and jclulow.
+
+From a CN point of view, perhaps we have two fields that look like
+'underlay_setup' and 'underlay_active' which indicate respectively that
+the server has everything configured that it needs for the underlay
+network and the latter indicates that the server has all of the
+necessary nic tags, networks, etc. activated and can therefore be
+actively provisioned on for overlay networks.
+
+### vmadm, nic tags, and overlay devices, oh my!
+
+One open question is how do we represent overlay devices in terms of nic
+tags and vmadm. I have a few ideas, but none that are really great. I'm
+not sure that we want every overlay device to be a nic tag in the
+traditional sense as controlled by napi, but, it seems like that's
+something we kind of want from a vmadm perspective.
+
+So, maybe when we provision, we do something like this, we add to the
+nic information:
+
+"overlay_id":	<Number> 
+"overlay_type":	"Joyent"
+
+The idea being that a Joyent type of overlay device knows to go create
+and set up an svp instance. Though I'm not sure more generally how we
+want to represent the overlay devices. I kind of like the idea of them
+basically being created on the fly as we need them and torn down when we
+don't.
+
+Perhaps it's as simple as
+
+"overlay_type": "custom",
+"overlay_opts": "<dladm opts>"
+
+Though, even that gets a bit tedious. Perhaps another way to do this is
+to extend the local nictagadm to basically treat it how to create
+different kinds of overlays and that could be fed into overlay_type. I
+dunno. Someone else should have a better idea...
+
+Yet another approach to consider is to consider an overlay device like a
+nic tag and have another device managing it. Therefore, we would simply
+have 'overlay<vxlan id>' be the nic tag for the network and have various
+tools or ways of knowing how to create that. This could then be managed
+by nictagadm. Consider something like a nictagadm add rule overlay%d_tag
+-> dladm create-overlay -e vxlan -s svp -p ... -v %d overlay%d.
+
+Whatever we end up doing likely suggests that we have work to do across
+VMAPI, NAPI, vmadm, and the provisioner workflows.
