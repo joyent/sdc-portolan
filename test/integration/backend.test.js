@@ -5,8 +5,15 @@
  */
 
 /*
- * Copyright (c) 2014, Joyent, Inc.
+ * Copyright (c) 2015, Joyent, Inc.
  */
+
+var mod_common = require('../../lib/common');
+var mod_mapping = require('../lib/mapping');
+var mod_req = require('../lib/request');
+var mod_server = require('../lib/server');
+var mod_types = require('../../lib/types');
+
 
 var bunyan = require('bunyan');
 var config = require('../../etc/config');
@@ -32,102 +39,109 @@ function createStream() {
     return (stream);
 }
 
+var CNS = [
+    {
+        cn_id: 'b4e5ff64-7b40-11e4-a6fa-d34c824a42cd',
+        ip: '192.168.1.1',
+        port: 123
+    }
+];
+
+var VMS = [
+    {
+        mac: '00:0a:95:9d:68:16',
+        ip: '10.0.0.1',
+        cn_id: CNS[0].cn_id,
+        vid: 12340,
+        deleted: false
+    }
+];
+
+var STATUS = mod_types.svp_status;
+
+
+
 test('setup', function (t) {
-    SHARED = MorayStore.init({
-        moray: {
-            host: process.env.MORAY_HOST || config.moray.host,
-            port: process.env.MORAY_PORT || config.moray.port
-        },
-        log: LOG
-    }, function (err) {
-        t.ifError(err);
-        t.end();
+    t.test('start server', mod_server.start);
+
+    t.test('add underlay mapping', function (t2) {
+        mod_mapping.addUnderlay(t2, {
+            params: CNS[0]
+        });
+    });
+
+    t.test('add overlay mapping', function (t2) {
+        mod_mapping.addOverlay(t2, {
+            params: VMS[0]
+        });
     });
 });
+
 
 test('ping', function (t) {
-    var stream = createStream();
-
-    var obj = {
-        svp_type: 1, // SVP_R_PING
-        svp_id: 5
-    };
-
-    var expected = {
-        svp_type: 2, // SVP_R_PONG
-        svp_id: 5
-    };
-
-    stream.on('readable', function () {
-        var actual = stream.read();
-        t.deepEquals(actual, expected);
-        t.end();
-    });
-    stream.end(obj);
+    mod_req.ping(t);
 });
+
 
 test('vl2', function (t) {
-    var stream = createStream();
-
-    var obj = {
-        svp_type: 3, // SVP_R_VL2_REQ
-        svp_id: 7,
-        svp_msg: {
-            vl2_mac: common.macToInt('00:0a:95:9d:68:16'),
-            vl2_vnet_id: 12340
-        }
-    };
-
-    var expected = {
-        svp_type: 4, // SVP_R_VL2_ACK
-        svp_id: 7,
-        svp_msg: {
-            vl2_status: 0,
-            vl2_port: 123,
-            vl2_addr: common.IPv6obj('192.168.1.1')
-        }
-    };
-
-    stream.on('readable', function () {
-        var actual = stream.read();
-        t.deepEquals(actual, expected);
-        t.end();
+    t.test('mapping exists', function (t2) {
+        mod_req.vl2(t2, {
+            params: {
+                mac: VMS[0].mac,
+                vid: VMS[0].vid
+            },
+            exp: {
+                status: STATUS.SVP_S_OK,
+                status_str: mod_types.statusString(STATUS.SVP_S_OK),
+                vl2_ip: mod_common.ipv4StrTov6(CNS[0].ip),
+                vl2_port: CNS[0].port
+            }
+        });
     });
-    stream.end(obj);
+
+
+    t.test('vid exists, but not mac', function (t2) {
+        mod_req.vl2(t2, {
+            params: {
+                mac: '00:00:99:99:88:11',
+                vid: VMS[0].vid
+            },
+            exp: mod_req.vl2NotFound()
+        });
+    });
+
+
+    t.test('mac exists, but not vid', function (t2) {
+        mod_req.vl2(t2, {
+            params: {
+                mac: VMS[0].mac,
+                vid: VMS[0].vid + 1
+            },
+            exp: mod_req.vl2NotFound()
+        });
+    });
 });
+
 
 test('vl3', function (t) {
-    var stream = createStream();
-
-    var obj = {
-        svp_type: 5, // SVP_R_VL3_REQ
-        svp_id: 7,
-        svp_msg: {
-            vl3_ip: common.stringToIp('10.0.0.1'),
-            vl3_vnet_id: 12340
-        }
-    };
-
-    var expected = {
-        svp_type: 6, // SVP_R_VL3_ACK
-        svp_id: 7,
-        svp_msg: {
-            vl3_status: 0,
-            vl3_mac: common.macToInt('00:0a:95:9d:68:16'),
-            vl3_port: 123,
-            vl3_addr: common.IPv6obj('192.168.1.1')
-        }
-    };
-
-    stream.on('readable', function () {
-        var actual = stream.read();
-        t.deepEquals(actual, expected);
-        t.end();
+    t.test('mapping exists', function (t2) {
+        mod_req.vl3(t2, {
+            params: {
+                ip: VMS[0].ip,
+                vid: VMS[0].vid
+            },
+            exp: {
+                status: STATUS.SVP_S_OK,
+                status_str: mod_types.statusString(STATUS.SVP_S_OK),
+                vl3_ip: mod_common.ipv4StrTov6(CNS[0].ip),
+                vl3_mac: VMS[0].mac,
+                vl3_port: CNS[0].port
+            }
+        });
     });
-    stream.end(obj);
 });
 
-test('teardown', function (t) {
-    SHARED.moray.close();
-    t.end();
-});
+
+// XXX: remove mappings
+
+test('teardown', mod_server.stop);
