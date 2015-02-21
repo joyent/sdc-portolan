@@ -26,12 +26,14 @@ var CLIENT;
 
 
 
-function closeClient() {
+function closeClient(t) {
     if (!CLIENT) {
+        t.ok(true, 'No client created: not closing');
         return;
     }
 
     CLIENT.close();
+    t.ok(true, 'Client closed');
 }
 
 

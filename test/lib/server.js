@@ -43,6 +43,7 @@ function startServer(t) {
     config.log = mod_log.child({ component: 'server' });
 
     mod_server.createServer(config, function _afterCreate(cErr, server) {
+        t.ifErr(cErr, 'create server');
         if (cErr) {
             throw cErr;
         }
@@ -57,13 +58,17 @@ function startServer(t) {
  * Create and start the test server
  */
 function stopServer(t) {
-    mod_client.close();
+    mod_client.close(t);
 
     if (SERVER) {
         SERVER.close();
+        t.ok(true, 'Server closed');
+    } else {
+        t.ok(true, 'No server created: not closing');
     }
 
     mod_moray.close();
+    t.ok(true, 'moray client closed');
 
     return t.end();
 }

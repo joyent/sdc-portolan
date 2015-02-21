@@ -13,31 +13,8 @@ var mod_mapping = require('../lib/mapping');
 var mod_req = require('../lib/request');
 var mod_server = require('../lib/server');
 var mod_types = require('../../lib/types');
-
-
-var bunyan = require('bunyan');
-var config = require('../../etc/config');
-var moray = require('moray');
 var test = require('tape');
 
-var common = require('../../lib/common.js');
-var MorayStore = require('../../lib/backend/moray.js');
-
-var LOG = bunyan.createLogger({
-    name: 'moray',
-    level: 'INFO',
-    stream: process.stdout,
-    serializers: bunyan.stdSerializers
-});
-
-var SHARED;
-
-function createStream() {
-    var stream = MorayStore.createStream({
-        log: LOG
-    });
-    return (stream);
-}
 
 var CNS = [
     {
@@ -137,6 +114,28 @@ test('vl3', function (t) {
                 vl3_mac: VMS[0].mac,
                 vl3_port: CNS[0].port
             }
+        });
+    });
+
+
+    t.test('vid exists, but not IP', function (t2) {
+        mod_req.vl3(t2, {
+            params: {
+                ip: '10.0.0.2',
+                vid: VMS[0].vid
+            },
+            exp: mod_req.vl3NotFound()
+        });
+    });
+
+
+    t.test('IP exists, but not vid', function (t2) {
+        mod_req.vl3(t2, {
+            params: {
+                ip: VMS[0].ip,
+                vid: VMS[0].vid + 1
+            },
+            exp: mod_req.vl3NotFound()
         });
     });
 });

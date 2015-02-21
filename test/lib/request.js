@@ -109,10 +109,25 @@ function vl2NotFound() {
 }
 
 
+/**
+ * Returns a client response for VL3 mapping not found
+ */
+function vl3NotFound() {
+    return {
+        status: STATUS.SVP_S_NOTFOUND,
+        status_str: mod_types.statusString(STATUS.SVP_S_NOTFOUND),
+        vl3_mac: '00:00:00:00:00:00',
+        vl3_ip: '::',
+        vl3_port: 0
+    };
+}
+
+
 
 module.exports = {
     ping: reqPing,
     vl2: reqVL2,
     vl2NotFound: vl2NotFound,
-    vl3: reqVL3
+    vl3: reqVL3,
+    vl3NotFound: vl3NotFound
 };
