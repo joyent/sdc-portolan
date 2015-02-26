@@ -5,7 +5,7 @@
 -->
 
 <!--
-    Copyright (c) 2014, Joyent, Inc.
+    Copyright (c) 2015, Joyent, Inc.
 -->
 
 # sdc-portolan
@@ -35,3 +35,16 @@ To run all tests:
 To run an individual test:
 
     node ./test/unit/testname.test.js
+
+
+## Integration tests
+
+To run an individual test:
+
+    node ./test/integration/testname.test.js
+
+If you're not in the portolan zone, you can run an individual test by
+setting the `MORAY_HOST` environment variable:
+
+    MORAY_HOST=10.99.99.17 node ./test/integration/backend.test.js
+

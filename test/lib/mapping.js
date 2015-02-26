@@ -22,17 +22,17 @@ function addOverlayMapping(t, opts) {
     assert.object(t, 't');
     assert.object(opts, 'opts');
     assert.object(opts.params, 'opts.params');
-    assert.string(opts.params.cn_id, 'opts.params.cn_id');
+    assert.string(opts.params.cn_uuid, 'opts.params.cn_uuid');
     assert.optionalBool(opts.params.deleted, 'opts.params.deleted');
     assert.string(opts.params.ip, 'opts.params.ip');
     assert.string(opts.params.mac, 'opts.params.mac');
-    assert.number(opts.params.vid, 'opts.params.vid');
+    assert.number(opts.params.vnet_id, 'opts.params.vnet_id');
 
     var val = {
-        cn_id: opts.params.cn_id,
+        cn_uuid: opts.params.cn_uuid,
         ip: mod_common.IPv6obj(opts.params.ip),
         mac: mod_common.macToInt(opts.params.mac),
-        vid: opts.params.vid,
+        vnet_id: opts.params.vnet_id,
         deleted: opts.params.deleted || false
     };
 
@@ -47,12 +47,12 @@ function addUnderlayMapping(t, opts) {
     assert.object(t, 't');
     assert.object(opts, 'opts');
     assert.object(opts.params, 'opts.params');
-    assert.string(opts.params.cn_id, 'opts.params.cn_id');
+    assert.string(opts.params.cn_uuid, 'opts.params.cn_uuid');
     assert.string(opts.params.ip, 'opts.params.ip');
     assert.number(opts.params.port, 'opts.params.port');
 
     var val = {
-        cn_id: opts.params.cn_id,
+        cn_uuid: opts.params.cn_uuid,
         ip: mod_common.IPv6obj(opts.params.ip),
         port: opts.params.port
     };

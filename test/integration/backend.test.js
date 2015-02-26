@@ -18,7 +18,7 @@ var test = require('tape');
 
 var CNS = [
     {
-        cn_id: 'b4e5ff64-7b40-11e4-a6fa-d34c824a42cd',
+        cn_uuid: 'b4e5ff64-7b40-11e4-a6fa-d34c824a42cd',
         ip: '192.168.1.1',
         port: 123
     }
@@ -28,8 +28,8 @@ var VMS = [
     {
         mac: '00:0a:95:9d:68:16',
         ip: '10.0.0.1',
-        cn_id: CNS[0].cn_id,
-        vid: 12340,
+        cn_uuid: CNS[0].cn_uuid,
+        vnet_id: 12340,
         deleted: false
     }
 ];
@@ -65,7 +65,7 @@ test('vl2', function (t) {
         mod_req.vl2(t2, {
             params: {
                 mac: VMS[0].mac,
-                vid: VMS[0].vid
+                vnet_id: VMS[0].vnet_id
             },
             exp: {
                 status: STATUS.SVP_S_OK,
@@ -77,22 +77,22 @@ test('vl2', function (t) {
     });
 
 
-    t.test('vid exists, but not mac', function (t2) {
+    t.test('vnet_id exists, but not mac', function (t2) {
         mod_req.vl2(t2, {
             params: {
                 mac: '00:00:99:99:88:11',
-                vid: VMS[0].vid
+                vnet_id: VMS[0].vnet_id
             },
             exp: mod_req.vl2NotFound()
         });
     });
 
 
-    t.test('mac exists, but not vid', function (t2) {
+    t.test('mac exists, but not vnet_id', function (t2) {
         mod_req.vl2(t2, {
             params: {
                 mac: VMS[0].mac,
-                vid: VMS[0].vid + 1
+                vnet_id: VMS[0].vnet_id + 1
             },
             exp: mod_req.vl2NotFound()
         });
@@ -105,7 +105,7 @@ test('vl3', function (t) {
         mod_req.vl3(t2, {
             params: {
                 ip: VMS[0].ip,
-                vid: VMS[0].vid
+                vnet_id: VMS[0].vnet_id
             },
             exp: {
                 status: STATUS.SVP_S_OK,
@@ -118,22 +118,22 @@ test('vl3', function (t) {
     });
 
 
-    t.test('vid exists, but not IP', function (t2) {
+    t.test('vnet_id exists, but not IP', function (t2) {
         mod_req.vl3(t2, {
             params: {
                 ip: '10.0.0.2',
-                vid: VMS[0].vid
+                vnet_id: VMS[0].vnet_id
             },
             exp: mod_req.vl3NotFound()
         });
     });
 
 
-    t.test('IP exists, but not vid', function (t2) {
+    t.test('IP exists, but not vnet_id', function (t2) {
         mod_req.vl3(t2, {
             params: {
                 ip: VMS[0].ip,
-                vid: VMS[0].vid + 1
+                vnet_id: VMS[0].vnet_id + 1
             },
             exp: mod_req.vl3NotFound()
         });

@@ -67,8 +67,8 @@ var OPTS = {
         help: 'Portolan host port'
     },
 
-    vid: {
-        names: [ 'vid' ],
+    vnet_id: {
+        names: [ 'vnet-id' ],
         type: 'positiveInteger',
         help: 'Virtual network ID'
     }
@@ -98,8 +98,9 @@ function setClientOpts(opts, clientOpts) {
 
 
 /**
- * Rename the options in {Object} opts using {Object} trans.  Throw an error
- * if any options are missing.
+ * Rename the options in {Object} opts using {Object} trans (which maps
+ * key names in opts to their translated names).  Throw an error if any
+ * options are missing.
  */
 function translateOpts(opts, trans) {
     var missing = [];
@@ -163,10 +164,10 @@ PortolanCLI.prototype['do_add-overlay'] =
     var backendOpts;
     try {
         backendOpts = translateOpts(opts, {
-            cn: 'cn_id',
+            cn: 'cn_uuid',
             ip: 'ip',
             mac: 'mac',
-            vid: 'vid'
+            vnet_id: 'vnet_id'
         });
         mod_common.validate.opts(backendOpts);
     } catch (optsErr) {
@@ -183,7 +184,7 @@ PortolanCLI.prototype['do_add-overlay'].options = [
     OPTS.cn,
     OPTS.ip,
     OPTS.mac,
-    OPTS.vid
+    OPTS.vnet_id
 ];
 
 
@@ -195,7 +196,7 @@ PortolanCLI.prototype['do_add-underlay'] =
     var backendOpts;
     try {
         backendOpts = translateOpts(opts, {
-            cn: 'cn_id',
+            cn: 'cn_uuid',
             ip: 'ip'
         });
         mod_common.validate.opts(backendOpts);
@@ -254,7 +255,7 @@ PortolanCLI.prototype['do_vl2-lookup'] =
     try {
         connOpts = translateOpts(opts, {
             mac: 'mac',
-            vid: 'vid'
+            vnet_id: 'vnet_id'
         });
         mod_common.validate.opts(connOpts);
     } catch (optsErr) {
@@ -282,7 +283,7 @@ PortolanCLI.prototype['do_vl2-lookup'].options = [
     OPTS.host,
     OPTS.mac,
     OPTS.port,
-    OPTS.vid
+    OPTS.vnet_id
 ];
 
 
@@ -295,7 +296,7 @@ PortolanCLI.prototype['do_vl3-lookup'] =
     try {
         connOpts = translateOpts(opts, {
             ip: 'ip',
-            vid: 'vid'
+            vnet_id: 'vnet_id'
         });
         mod_common.validate.opts(connOpts);
     } catch (optsErr) {
@@ -325,7 +326,7 @@ PortolanCLI.prototype['do_vl3-lookup'].options = [
     OPTS.host,
     OPTS.ip,
     OPTS.port,
-    OPTS.vid
+    OPTS.vnet_id
 ];
 
 

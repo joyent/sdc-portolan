@@ -80,7 +80,7 @@ function reqVL3(t, opts) {
     mod_client.get(function (_, client) {
         var params = {
             ip: mod_common.IPv6obj(opts.params.ip),
-            vid: opts.params.vid
+            vnet_id: opts.params.vnet_id
         };
 
         client.vl3Req(params, function _afterVL3(err, res) {

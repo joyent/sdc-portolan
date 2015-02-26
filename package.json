@@ -15,7 +15,7 @@
         "lru-cache": "2.5.0",
         "mkdirp": "0.5.0",
         "moray": "git+ssh://git@github.com:joyent/node-moray.git#441fd44",
-        "portolan-moray": "git+ssh://git@github.com:joyent/sdc-portolan-moray.git#07acf47",
+        "portolan-moray": "git+ssh://git@github.com:joyent/sdc-portolan-moray.git#237d357",
         "vasync": "1.6.2",
         "verror": "1.6.0",
         "vstream": "0.1.0"
