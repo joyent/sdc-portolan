@@ -7,7 +7,7 @@
 #
 
 #
-# Copyright (c) 2014, Joyent, Inc.
+# Copyright (c) 2015, Joyent, Inc.
 #
 
 export PS4='[\D{%FT%TZ}] ${BASH_SOURCE}:${LINENO}: ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
@@ -23,6 +23,10 @@ CONFIG_AGENT_LOCAL_MANIFESTS_DIRS=/opt/smartdc/$role
 sdc_common_setup
 
 /usr/sbin/svccfg import /opt/smartdc/$role/smf/manifests/portolan.xml
+
+# Add build/node/bin and node_modules/.bin to PATH
+echo "" >>/root/.profile
+echo "export PATH=\$PATH:/opt/smartdc/$role/node/bin:/opt/smartdc/$role/node_modules/.bin:/opt/smartdc/$role/bin" >>/root/.profile
 
 # Log rotation.
 sdc_log_rotation_add amon-agent /var/svc/log/*amon-agent*.log 1g
