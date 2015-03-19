@@ -6,7 +6,7 @@
 #
 
 #
-# Copyright (c) 2014, Joyent, Inc.
+# Copyright (c) 2015, Joyent, Inc.
 #
 
 set -o xtrace
@@ -17,7 +17,7 @@ PATH=/usr/sbin:/usr/bin; export PATH
 
 case "$1" in
 'start')
-    /usr/bin/ctrun -l child -o noorphan /opt/smartdc/portolan/build/node/bin/node /opt/smartdc/portolan/server.js &
+    /usr/bin/ctrun -l child -o noorphan /opt/smartdc/portolan/build/node/bin/node --abort_on_uncaught_exception /opt/smartdc/portolan/server.js &
     ;;
 
 'stop')
