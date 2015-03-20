@@ -13,7 +13,13 @@ var mod_mapping = require('../lib/mapping');
 var mod_req = require('../lib/request');
 var mod_server = require('../lib/server');
 var mod_types = require('../../lib/types');
+var mod_uuid = require('node-uuid');
 var test = require('tape');
+
+
+
+// --- Globals
+
 
 
 var CNS = [
@@ -31,10 +37,23 @@ var VMS = [
         cn_uuid: CNS[0].cn_uuid,
         vnet_id: 12340,
         deleted: false
+    },
+
+    // VM mapping exists, but not the underlying CN mapping:
+    {
+        mac: '00:0a:95:11:11:11',
+        ip: '10.0.0.2',
+        cn_uuid: mod_uuid.v4(),
+        vnet_id: 12340,
+        deleted: false
     }
 ];
 
 var STATUS = mod_types.svp_status;
+
+
+
+// --- Tests
 
 
 
@@ -47,9 +66,16 @@ test('setup', function (t) {
         });
     });
 
-    t.test('add overlay mapping', function (t2) {
+    t.test('add overlay mapping: VM 0', function (t2) {
         mod_mapping.addOverlay(t2, {
             params: VMS[0]
+        });
+    });
+
+
+    t.test('add overlay mapping: VM 1', function (t2) {
+        mod_mapping.addOverlay(t2, {
+            params: VMS[1]
         });
     });
 });
@@ -61,6 +87,7 @@ test('ping', function (t) {
 
 
 test('vl2', function (t) {
+
     t.test('mapping exists', function (t2) {
         mod_req.vl2(t2, {
             params: {
@@ -97,6 +124,18 @@ test('vl2', function (t) {
             exp: mod_req.vl2NotFound()
         });
     });
+
+
+    t.test('overlay mapping exists, but not underlay', function (t2) {
+        mod_req.vl2(t2, {
+            params: {
+                mac: VMS[1].mac,
+                vnet_id: VMS[1].vnet_id
+            },
+            exp: mod_req.vl2NotFound()
+        });
+    });
+
 });
 
 
@@ -138,9 +177,22 @@ test('vl3', function (t) {
             exp: mod_req.vl3NotFound()
         });
     });
+
+
+    t.test('overlay mapping exists, but not underlay', function (t2) {
+        mod_req.vl3(t2, {
+            params: {
+                ip: VMS[1].ip,
+                vnet_id: VMS[1].vnet_id
+            },
+            exp: mod_req.vl3NotFound()
+        });
+    });
+
 });
 
 
 // XXX: remove mappings
+
 
 test('teardown', mod_server.stop);
