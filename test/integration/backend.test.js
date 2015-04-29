@@ -192,6 +192,12 @@ test('vl3', function (t) {
 });
 
 
+// XXX: log lookup tests:
+// - try to delete a record that doesn't exist
+// - double-delete a record
+
+
+
 // XXX: remove mappings
 
 
