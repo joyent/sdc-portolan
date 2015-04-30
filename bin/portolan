@@ -71,6 +71,18 @@ var OPTS = {
         names: [ 'vnet-id' ],
         type: 'positiveInteger',
         help: 'Virtual network ID'
+    },
+
+    count: {
+        names: [ 'count' ],
+        type: 'positiveInteger',
+        help: 'count of bytes to remove'
+    },
+
+    id: {
+        names: [ 'id', 'uuid' ],
+        type: 'arrayOfString',
+        help: 'array of log ids to remove'
     }
 };
 
@@ -306,7 +318,7 @@ PortolanCLI.prototype['do_vl3-lookup'] =
     setClientOpts(opts, connOpts);
     connOpts.ip = mod_common.IPv6obj(opts.ip);
 
-    var client = mod_client.connect(connOpts, function _afterVl2Conn(err) {
+    var client = mod_client.connect(connOpts, function _afterVl3Conn(err) {
         if (err) {
             return callback(err);
         }
@@ -329,6 +341,79 @@ PortolanCLI.prototype['do_vl3-lookup'].options = [
     OPTS.vnet_id
 ];
 
+
+PortolanCLI.prototype['do_log_req'] =
+    function _logReq(subcmd, opts, args, callback) {
+
+    try {
+        var connOpts = translateOpts(opts, {
+            ip: 'ip',
+            count: 'count'
+        });
+        mod_common.validate.opts(connOpts);
+    } catch (optsErr) {
+        return callback(optsErr);
+    }
+
+    setClientOpts(opts, connOpts);
+    connOpts.ip = mod_common.IPv6obj(opts.ip);
+
+    config.log.debug({ msg: connOpts }, 'sending log req');
+
+    var client = mod_client.connect(connOpts, function _afterLogReqConn(err) {
+        if (err) {
+            return callback(err);
+        }
+
+        client.logReq(connOpts, function (err2, res) {
+            if (err2) {
+                return callback(err2);
+            }
+
+            json(res);
+            return callback();
+        });
+    });
+};
+
+PortolanCLI.prototype['do_log_req'].options = [
+    OPTS.host,
+    OPTS.ip,
+    OPTS.port,
+    OPTS.count
+];
+
+PortolanCLI.prototype['do_log_rm'] =
+    function _logRm(subcmd, opts, args, callback) {
+
+    try {
+        var connOpts = translateOpts(opts, {
+            id: 'ids'
+        });
+        mod_common.validate.opts(connOpts);
+    } catch (optsErr) {
+        return callback(optsErr);
+    }
+
+    setClientOpts(opts, connOpts);
+    connOpts.count = connOpts.ids.length;
+
+    config.log.debug({ msg: connOpts }, 'sending log rm request');
+    var client = mod_client.connect(connOpts, function _afterLogRmConn(err) {
+        if (err) {
+            return callback(err);
+        }
+
+        client.logRm(connOpts, function (err2, res) {
+            json(res);
+            return callback();
+        });
+    });
+};
+
+PortolanCLI.prototype['do_log_rm'].options = [
+    OPTS.id
+];
 
 var cli = new PortolanCLI();
 mod_cmdln.main(cli);

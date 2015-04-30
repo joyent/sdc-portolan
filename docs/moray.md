@@ -54,10 +54,10 @@ system.
 ----------------|-----------|--------|-----------------------
 mac             | MAC addr  | yes    | MAC address
 ip              | IP addr   | yes    | IP address
-cn_id           | UUID      | yes    | CN this MAC resides on
-vid             | UUID      | yes    | vnet ID
-version         | Int       |        | per-record version
-deleted         | Bool      |        | tombstone indicator
+cn_uuid         | UUID      | yes    | CN this MAC resides on
+vnet_id         | UUID      | yes    | vnet ID
+version         | Int       | yes    | per-record version
+deleted         | Bool      | yes    | tombstone indicator
 \_key           |           |        | tuple of [ip,vid]
 
 Each customer controls their entire network, so we don't need per-record
@@ -102,8 +102,8 @@ This holds log events for the various CNs.
 
    field    |   type    | Index? | Description
 ------------|-----------|--------|-----------------------
-cn_id       | UUID      | yes    | CN this MAC resides on
-vid         | UUID      | yes    | vnet ID
+cn_uuid     | UUID      | yes    | CN this MAC resides on
+vnet_id     | UUID      | yes    | vnet ID
 record      | JSON      |        | log record to be pulled onto the CN
 id          | int       | yes    | log record ID - used for deleting later
 

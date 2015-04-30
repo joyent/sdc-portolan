@@ -154,6 +154,7 @@ typedef struct svp_bulk_ack {
  */
 typedef struct svp_log_req {
 	uint32_t	svlr_count;
+	uint8_t	svlr_ip[16];
 } svp_log_req_t;
 
 /*

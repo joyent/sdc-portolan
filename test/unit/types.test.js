@@ -63,6 +63,30 @@ test('opinfo', function (t) {
             op: svp_op.SVP_R_VL3_ACK,
             sizeof: 28,
             type: 'svp_vl3_ack_t'
+        },
+        {
+            name: 'SVP_R_LOG_REQ',
+            op: svp_op.SVP_R_LOG_REQ,
+            sizeof: 20,
+            type: 'svp_log_req_t'
+        },
+        {
+            name: 'SVP_R_LOG_ACK',
+            op: svp_op.SVP_R_LOG_ACK,
+            sizeof: 4,
+            type: 'svp_log_ack_t'
+        },
+        {
+            name: 'SVP_R_LOG_RM',
+            op: svp_op.SVP_R_LOG_RM,
+            sizeof: 4,
+            type: 'svp_lrm_req_t'
+        },
+        {
+            name: 'SVP_R_LOG_RM_ACK',
+            op: svp_op.SVP_R_LOG_RM_ACK,
+            sizeof: 4,
+            type: 'svp_lrm_ack_t'
         }
     ];
 

@@ -1,7 +1,7 @@
 { "metadata":
 	{
 		"ctf2json_version": "1.0",
-		"created_at": 1433295172,
+		"created_at": 1430352621,
 		"derived_from": "src/types",
 		"ctf_version": 2,
 		"requested_types": [ "svp_req_t" , "svp_vl2_req_t" , "svp_vl2_ack_t" , "svp_vl3_req_t" , "svp_vl3_ack_t" , "svp_bulk_req_t" , "svp_bulk_ack_t" , "svp_log_req_t" , "svp_log_vl2_t" , "svp_log_vl3_t" , "svp_log_ack_t" , "svp_lrm_req_t" , "svp_lrm_ack_t" , "svp_shootdown_t" ]
@@ -13,8 +13,7 @@
 		{ "name": "unsigned char", "integer": { "length": 1, "signed": false } },
 		{ "name": "uint8_t", "typedef": "unsigned char" },
 		{ "name": "struct svp_log_ack", "struct": [
-			{ "name": "svla_status", "type": "uint32_t" },
-			{ "name": "svla_data", "type": "uint8_t [0]" }
+			{ "name": "svla_status", "type": "uint32_t" }
 		] },
 		{ "name": "svp_log_ack_t", "typedef": "struct svp_log_ack" },
 		{ "name": "struct svp_vl2_req", "struct": [
@@ -40,7 +39,8 @@
 			{ "name": "sl3r_vnetid", "type": "uint32_t" }
 		] },
 		{ "name": "struct svp_log_req", "struct": [
-			{ "name": "svlr_count", "type": "uint32_t" }
+			{ "name": "svlr_count", "type": "uint32_t" },
+			{ "name": "svlr_ip", "type": "uint8_t [16]"}
 		] },
 		{ "name": "svp_log_req_t", "typedef": "struct svp_log_req" },
 		{ "name": "struct svp_shootdown", "struct": [
@@ -62,8 +62,7 @@
 		{ "name": "svp_bulk_req_t", "typedef": "struct svp_bulk_req" },
 		{ "name": "struct svp_bulk_ack", "struct": [
 			{ "name": "svba_status", "type": "uint32_t" },
-			{ "name": "svba_type", "type": "uint32_t" },
-			{ "name": "svba_data", "type": "uint8_t [0]" }
+			{ "name": "svba_type", "type": "uint32_t" }
 		] },
 		{ "name": "svp_bulk_ack_t", "typedef": "struct svp_bulk_ack" },
 		{ "name": "struct svp_req", "struct": [
@@ -75,8 +74,7 @@
 		] },
 		{ "name": "svp_req_t", "typedef": "struct svp_req" },
 		{ "name": "struct svp_lrm_req", "struct": [
-			{ "name": "svrr_count", "type": "uint32_t" },
-			{ "name": "svrr_ids", "type": "uint8_t [0]" }
+			{ "name": "svrr_count", "type": "uint32_t" }
 		] },
 		{ "name": "svp_lrm_req_t", "typedef": "struct svp_lrm_req" },
 		{ "name": "svp_lrm_ack_t", "typedef": "struct svp_lrm_ack" },
