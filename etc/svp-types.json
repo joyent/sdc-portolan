@@ -13,7 +13,7 @@
 		{ "name": "unsigned char", "integer": { "length": 1, "signed": false } },
 		{ "name": "uint8_t", "typedef": "unsigned char" },
 		{ "name": "struct svp_log_ack", "struct": [
-			{ "name": "svla_status", "type": "uint32_t" }
+			{ "name": "svla_status", "type": "uint32_t" },
 			{ "name": "svla_data", "type": "uint8_t [0]" }
 		] },
 		{ "name": "svp_log_ack_t", "typedef": "struct svp_log_ack" },
@@ -62,7 +62,7 @@
 		{ "name": "svp_bulk_req_t", "typedef": "struct svp_bulk_req" },
 		{ "name": "struct svp_bulk_ack", "struct": [
 			{ "name": "svba_status", "type": "uint32_t" },
-			{ "name": "svba_type", "type": "uint32_t" }
+			{ "name": "svba_type", "type": "uint32_t" },
 			{ "name": "svba_data", "type": "uint8_t [0]" }
 		] },
 		{ "name": "svp_bulk_ack_t", "typedef": "struct svp_bulk_ack" },
@@ -75,7 +75,7 @@
 		] },
 		{ "name": "svp_req_t", "typedef": "struct svp_req" },
 		{ "name": "struct svp_lrm_req", "struct": [
-			{ "name": "svrr_count", "type": "uint32_t" }
+			{ "name": "svrr_count", "type": "uint32_t" },
 			{ "name": "svrr_ids", "type": "uint8_t [0]" }
 		] },
 		{ "name": "svp_lrm_req_t", "typedef": "struct svp_lrm_req" },
