@@ -543,7 +543,7 @@ data payload associated with them.
 		uint32_t	svl3_type;	/* Should be SVP_LOG_VL3 */
 		uint8_t		svl3_id[16];	/* 16-byte UUID */
 		uint8_t		svl3_ip[16];
-		uint8_t		svl3_mac[ETHERADDRL];
+		uint8_t		svl3_pad[2];
 		uint16_t	svl3_vlan;
 		uint32_t	svl3_vnetid;
 	} svp_log_vl3_t;

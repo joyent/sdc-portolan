@@ -159,7 +159,7 @@ typedef struct svp_log_req {
 /*
  * The server replies to a log request by sending a series of log entries.
  * These log entries may be a mixture of both vl2 and vl3 records. The reply is
- * a stream of bytes after the status message whose length is determined based
+ * a stream of bytes after the status message whose length is determined baseed
  * on the header itself. Each entry begins with a uint32_t that describes its
  * type and then is followed by the remaining data payload. The next entry
  * follows immediately which again begins with the uint32_t word that describes
@@ -182,7 +182,7 @@ typedef struct svp_log_vl3 {
 	uint32_t	svl3_type;	/* Should be SVP_LOG_VL3 */
 	uint8_t		svl3_id[16];	/* 16-byte UUID */
 	uint8_t		svl3_ip[16];
-	uint8_t		svl3_mac[ETHERADDRL];
+	uint8_t		svl3_pad[2];
 	uint16_t	svl3_vlan;
 	uint32_t	svl3_vnetid;
 } svp_log_vl3_t;
