@@ -1,7 +1,7 @@
 { "metadata":
 	{
 		"ctf2json_version": "1.0",
-		"created_at": 1430352621,
+		"created_at": 1433295172,
 		"derived_from": "src/types",
 		"ctf_version": 2,
 		"requested_types": [ "svp_req_t" , "svp_vl2_req_t" , "svp_vl2_ack_t" , "svp_vl3_req_t" , "svp_vl3_ack_t" , "svp_bulk_req_t" , "svp_bulk_ack_t" , "svp_log_req_t" , "svp_log_vl2_t" , "svp_log_vl3_t" , "svp_log_ack_t" , "svp_lrm_req_t" , "svp_lrm_ack_t" , "svp_shootdown_t" ]
@@ -92,7 +92,7 @@
 			{ "name": "svl3_type", "type": "uint32_t" },
 			{ "name": "svl3_id", "type": "uint8_t [16]" },
 			{ "name": "svl3_ip", "type": "uint8_t [16]" },
-			{ "name": "svl3_mac", "type": "uint8_t [6]" },
+			{ "name": "svl3_pad", "type": "uint8_t [2]" },
 			{ "name": "svl3_vlan", "type": "uint16_t" },
 			{ "name": "svl3_vnetid", "type": "uint32_t" }
 		] },
