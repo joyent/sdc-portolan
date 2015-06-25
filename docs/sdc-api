@@ -306,7 +306,7 @@ parameter set:
 
 	"mtu":	<Number 576-9000>
 
-When a CN boots up, it looks at all off the NIC tags that have been
+When a CN boots up, it looks at all of the NIC tags that have been
 defined on it for a given interface and sets the MTU of that interface
 to the maximum.
 
@@ -369,7 +369,7 @@ network setup time (which is part of post-install).
 	generally control this, having this be a default value seems to
 	make some sense.
 
-By having both of these by configurable values with reasonable defaults,
+By having both of these be configurable values with reasonable defaults,
 a user that ends up in a network that doesn't support jumbo frames could
 reasonable set default_underlay_mtu=1500, default_overlay_mtu=1400.
 Importantly though, once these are set they will need to be locked until
