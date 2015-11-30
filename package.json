@@ -15,7 +15,7 @@
         "lomstream": "^1.1.0",
         "lru-cache": "2.5.0",
         "mkdirp": "0.5.0",
-        "moray": "git+ssh://git@github.com:joyent/node-moray.git#441fd44",
+        "moray": "git+ssh://git@github.com:joyent/node-moray.git#b84ef0e",
         "node-uuid": "1.4.2",
         "portolan-moray": "git+ssh://git@github.com:joyent/sdc-portolan-moray.git#72eb031",
         "vasync": "1.6.2",
