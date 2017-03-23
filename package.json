@@ -6,7 +6,7 @@
     "private": true,
     "dependencies": {
         "assert-plus": "0.1.5",
-        "bunyan": "1.2.3",
+        "bunyan": "1.8.9",
         "clone": "1.0.0",
         "cmdln": "3.0.1",
         "ctype": "0.5.3",
