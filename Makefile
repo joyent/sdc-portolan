@@ -42,7 +42,7 @@ CTF_TYPES=-t svp_req_t \
 	-t svp_shootdown_t
 TAPE=node_modules/.bin/tape
 
-NODE_PREBUILT_VERSION=v0.10.32
+NODE_PREBUILT_VERSION=v0.10.48
 ifeq ($(shell uname -s),SunOS)
 	NODE_PREBUILT_TAG=zone
 	# This is sdc-minimal-multiarch-lts@15.4.1, compat with
