@@ -12,7 +12,8 @@
  * Test for basic server operations
  */
 
-var backend = require('../../lib/backend');
+'use strict';
+
 var client = require('../../lib/client');
 var portolan = require('../../lib/portolan');
 var test = require('tape');
@@ -43,7 +44,8 @@ test('setup', function (t) {
     portolan.createServer(CONFIG, function _afterCreate(err, server) {
         t.ifErr(err, 'create server');
         if (!server) {
-            return t.end();
+            t.end();
+            return;
         }
 
         SERVER = server;

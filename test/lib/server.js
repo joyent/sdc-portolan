@@ -8,6 +8,8 @@
  * Copyright (c) 2015, Joyent, Inc.
  */
 
+'use strict';
+
 var config = require('./config');
 var mod_client = require('./client');
 var mod_log = require('./log');

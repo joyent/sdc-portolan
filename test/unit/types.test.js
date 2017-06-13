@@ -14,6 +14,8 @@
  * values are changed accidentally.
  */
 
+'use strict';
+
 var mod_types = require('../../lib/types');
 var test = require('tape');
 

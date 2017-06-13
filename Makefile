@@ -21,6 +21,7 @@ JSL_CONF_NODE	 = tools/jsl.node.conf
 JSL_FILES_NODE	 = $(JS_FILES)
 JSSTYLE_FILES	 = $(JS_FILES)
 JSSTYLE_FLAGS	 = -f tools/jsstyle.conf
+ESLINT_FILES	 = $(JS_FILES)
 SMF_MANIFESTS_IN = smf/manifests/portolan.xml.in
 CLEAN_FILES += ./node_modules
 
@@ -42,8 +43,8 @@ CTF_TYPES=-t svp_req_t \
 	-t svp_shootdown_t
 TAPE=node_modules/.bin/tape
 
-NODE_PREBUILT_VERSION=v0.10.32
 ifeq ($(shell uname -s),SunOS)
+	NODE_PREBUILT_VERSION=v0.10.32
 	NODE_PREBUILT_TAG=zone
 	NODE_PREBUILT_IMAGE=de411e86-548d-11e4-a4b7-3bb60478632a
 endif
@@ -53,6 +54,7 @@ include ./tools/mk/Makefile.defs
 ifeq ($(shell uname -s),SunOS)
 	include ./tools/mk/Makefile.node_prebuilt.defs
 else
+	NODE := node
 	NPM := $(shell which npm)
 	NPM_EXEC=$(NPM)
 endif
@@ -71,7 +73,7 @@ RELSTAGEDIR:=/tmp/$(STAMP)
 #
 .PHONY: all
 all: $(SMF_MANIFESTS) build/build.json | $(NPM_EXEC) sdc-scripts
-	$(NPM) install
+	$(NPM) install --production
 
 build/build.json:
 	mkdir -p build

@@ -8,6 +8,8 @@
  * Copyright (c) 2015, Joyent, Inc.
  */
 
+'use strict';
+
 var config = require('./config');
 var mod_client = require('../../lib/client');
 var mod_log = require('./log');
@@ -39,7 +41,8 @@ function closeClient(t) {
 
 function getClient(callback) {
     if (CLIENT) {
-        return callback(null, CLIENT);
+        callback(null, CLIENT);
+        return;
     }
 
     var clientConfig = {
@@ -53,7 +56,7 @@ function getClient(callback) {
             throw cErr;
         }
 
-        return callback(null, CLIENT);
+        callback(null, CLIENT);
     });
 }
 

@@ -8,6 +8,8 @@
  * Copyright (c) 2014, Joyent, Inc.
  */
 
+'use strict';
+
 var assert = require('assert-plus');
 var mod_common = require('../../lib/common.js');
 var mod_moray = require('../../lib/backend/moray');

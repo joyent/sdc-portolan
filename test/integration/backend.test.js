@@ -8,6 +8,8 @@
  * Copyright (c) 2015, Joyent, Inc.
  */
 
+'use strict';
+
 var mod_common = require('../../lib/common');
 var mod_mapping = require('../lib/mapping');
 var mod_req = require('../lib/request');
