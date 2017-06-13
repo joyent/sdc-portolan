@@ -12,6 +12,8 @@
  * bunyan logger for tests
  */
 
+'use strict';
+
 var mod_bunyan = require('bunyan');
 
 module.exports = mod_bunyan.createLogger({

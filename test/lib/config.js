@@ -8,6 +8,7 @@
  * Copyright (c) 2015, Joyent, Inc.
  */
 
+'use strict';
 
 var assert = require('assert-plus');
 
