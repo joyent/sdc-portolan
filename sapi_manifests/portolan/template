@@ -2,8 +2,10 @@
     "backend": "moray",
     "logLevel": "debug",
     "moray": {
-        "host": "{{{MORAY_SERVICE}}}",
-        "port": 2020
+        "srvDomain": "{{{MORAY_SERVICE}}}",
+        "cueballOptions": {
+            "resolvers": [ "{{{BINDER_SERVICE}}}" ]
+        }
     },
     "port": 1296
 }
