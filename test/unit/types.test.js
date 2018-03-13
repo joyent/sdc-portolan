@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (c) 2014, Joyent, Inc.
+ * Copyright (c) 2018, Joyent, Inc.
  */
 
 /*
@@ -89,6 +89,24 @@ test('opinfo', function (t) {
             op: svp_op.SVP_R_LOG_RM_ACK,
             sizeof: 4,
             type: 'svp_lrm_ack_t'
+        },
+        {
+            name: 'SVP_R_SHOOTDOWN',
+            op: svp_op.SVP_R_SHOOTDOWN,
+            sizeof: 12,
+            type: 'svp_shootdown_t'
+        },
+        {
+            name: 'SVP_R_ROUTE_REQ',
+            op: svp_op.SVP_R_ROUTE_REQ,
+            sizeof: 40,
+            type: 'svp_route_req_t'
+        },
+        {
+            name: 'SVP_R_ROUTE_ACK',
+            op: svp_op.SVP_R_ROUTE_ACK,
+            sizeof: 48,
+            type: 'svp_route_ack_t'
         }
     ];
 
@@ -99,6 +117,7 @@ test('opinfo', function (t) {
         t.equal(Object.keys(type).length, 4, 'keys');
 
         var opinfo = mod_types.opInfo(type.op);
+
         t.equal(opinfo.name, type.name, type.name + ' name');
         t.equal(opinfo.sizeof, type.sizeof, 'sizeof');
         t.equal(opinfo.sizeofReq, type.sizeof + req_size, 'sizeofReq');

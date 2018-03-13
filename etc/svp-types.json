@@ -4,7 +4,14 @@
 		"created_at": 1430352621,
 		"derived_from": "src/types",
 		"ctf_version": 2,
-		"requested_types": [ "svp_req_t" , "svp_vl2_req_t" , "svp_vl2_ack_t" , "svp_vl3_req_t" , "svp_vl3_ack_t" , "svp_bulk_req_t" , "svp_bulk_ack_t" , "svp_log_req_t" , "svp_log_vl2_t" , "svp_log_vl3_t" , "svp_log_ack_t" , "svp_lrm_req_t" , "svp_lrm_ack_t" , "svp_shootdown_t" ]
+		"requested_types": [
+            "svp_req_t", "svp_vl2_req_t", "svp_vl2_ack_t",
+            "svp_vl3_req_t", "svp_vl3_ack_t", "svp_bulk_req_t",
+            "svp_bulk_ack_t", "svp_log_req_t", "svp_log_vl2_t",
+            "svp_log_vl3_t", "svp_log_ack_t", "svp_lrm_req_t",
+            "svp_lrm_ack_t", "svp_shootdown_t", "svp_route_req_t",
+            "svp_route_ack_t"
+        ]
 	},
 "data":
 	[
@@ -56,7 +63,7 @@
 		] },
 		{ "name": "svp_vl3_req_t", "typedef": "struct svp_vl3_req" },
 		{ "name": "svp_vl3_ack_t", "typedef": "struct svp_vl3_ack" },
-		{ "name": "struct svp_bulk_req", "struct": [
+        { "name": "struct svp_bulk_req", "struct": [
 			{ "name": "svbr_type", "type": "uint32_t" }
 		] },
 		{ "name": "svp_bulk_req_t", "typedef": "struct svp_bulk_req" },
@@ -95,6 +102,43 @@
 			{ "name": "svl3_vnetid", "type": "uint32_t" }
 		] },
 		{ "name": "svp_log_vl3_t", "typedef": "struct svp_log_vl3" },
-		{ "name": "svp_shootdown_t", "typedef": "struct svp_shootdown" }
+		{ "name": "struct svp_log_route", "struct": [
+			{ "name": "svlr_type", "type": "uint32_t" },
+			{ "name": "svlr_id", "type": "uint8_t [16]" },
+			{ "name": "svlr_src_vnetid", "type": "uint32_t" },
+			{ "name": "svlr_dst_vnetid", "type": "uint32_t" },
+			{ "name": "svlr_dcid", "type": "uint32_t" },
+			{ "name": "svlr_srcip", "type": "uint8_t [16]" },
+			{ "name": "svlr_dstip", "type": "uint8_t [16]" },
+			{ "name": "svlr_src_vlanid", "type": "uint16_t" },
+			{ "name": "svlr_dst_vlanid", "type": "uint16_t" },
+			{ "name": "svlr_src_prefixlen", "type": "uint8_t" },
+			{ "name": "svlr_dst_prefixlen", "type": "uint8_t" },
+			{ "name": "svlr_pad", "type": "uint8_t [2]" }
+		] },
+		{ "name": "svp_log_route_t", "typedef": "struct svp_log_route" },
+		{ "name": "svp_shootdown_t", "typedef": "struct svp_shootdown" },
+		{ "name": "struct svp_route_req", "struct": [
+			{ "name": "srr_vnetid", "type": "uint32_t" },
+			{ "name": "srr_vlanid", "type": "uint16_t" },
+			{ "name": "srr_pad", "type": "uint8_t [2]" },
+			{ "name": "srr_srcip", "type": "uint8_t [16]" },
+			{ "name": "srr_dstip", "type": "uint8_t [16]" }
+		] },
+		{ "name": "struct svp_route_ack", "struct": [
+			{ "name": "sra_status", "type": "uint32_t" },
+			{ "name": "sra_dcid", "type": "uint32_t" },
+			{ "name": "sra_vnetid", "type": "uint32_t" },
+			{ "name": "sra_vlanid", "type": "uint16_t" },
+			{ "name": "sra_port", "type": "uint16_t" },
+			{ "name": "sra_ul3ip", "type": "uint8_t [16]" },
+			{ "name": "sra_vl2_srcmac", "type": "uint8_t [6]" },
+			{ "name": "sra_vl2_dstmac", "type": "uint8_t [6]" },
+			{ "name": "sra_src_prefixlen", "type": "uint8_t" },
+			{ "name": "sra_dst_prefixlen", "type": "uint8_t" },
+			{ "name": "sra_pad", "type": "uint8_t [2]" }
+		] },
+		{ "name": "svp_route_req_t", "typedef": "struct svp_route_req" },
+		{ "name": "svp_route_ack_t", "typedef": "struct svp_route_ack" }
 	]
 }

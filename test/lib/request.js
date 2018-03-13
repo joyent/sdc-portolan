@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (c) 2015, Joyent, Inc.
+ * Copyright (c) 2018, Joyent, Inc.
  */
 
 'use strict';
@@ -97,6 +97,81 @@ function reqVL3(t, opts) {
     });
 }
 
+/**
+ * Make a vnetroute request
+ */
+function reqVnetRoute(t, opts) {
+    assert.object(t, 't');
+    assert.object(opts, 'opts');
+    assert.object(opts.exp, 'opts.exp');
+    assert.object(opts.params, 'opts.params');
+    assert.number(opts.params.vnet_id, 'opts.params.vnet_id');
+    assert.number(opts.params.vlan_id, 'opts.params.vlan_id');
+    assert.string(opts.params.srcip, 'opts.params.srcip');
+    assert.string(opts.params.dstip, 'opts.params.dstip');
+
+    mod_client.get(function (_, client) {
+        var params = {
+            vnet_id: opts.params.vnet_id,
+            vlan_id: opts.params.vlan_id,
+            srcip: mod_common.IPv6obj(opts.params.srcip),
+            dstip: mod_common.IPv6obj(opts.params.dstip)
+        };
+
+        client.vnetRouteReq(params, function _aftervnetRoute(err, res) {
+            t.ifErr(err, 'vnetRoute error');
+            if (err) {
+                return t.end();
+            }
+
+            // XXX: should we return an error code instead?
+            if (Object.keys(res).length === 0) {
+                res = vnetRouteNotFound();
+            }
+
+            t.deepEqual(res, opts.exp, 'vnetRoute res');
+            return t.end();
+        });
+    });
+}
+
+function reqVlogs(t, opts) {
+    assert.object(t, 't');
+    assert.object(opts, 'opts');
+    assert.object(opts.exp, 'opts.exp');
+    assert.object(opts.params, 'opts.params');
+    assert.string(opts.params.ip, 'opts.params.ip');
+    assert.number(opts.params.count, 'opts.params.count');
+
+    mod_client.get(function (_, client) {
+        var params = {
+            ip: mod_common.IPv6obj(opts.params.ip),
+            count: opts.params.count
+        };
+
+        client.logReq(params, function _afterlogReq(err, res) {
+            t.ifErr(err, 'logReq error');
+            if (err) {
+                return t.end();
+            }
+
+            /*
+             * Log record id's are created dynamically.  For now just test that
+             * they exist and are of the right type.  Then delete them and do a
+             * deep equal with the other fields.
+             */
+            for (var i = 0; i < res.la_data.length; i++) {
+                var record = res.la_data[i];
+                t.assert(record.id && typeof (record.id) === 'string',
+                    'record id');
+                delete res.la_data[i].id;
+            }
+
+            t.deepEqual(res, opts.exp, 'logReq res');
+            return t.end();
+        });
+    });
+}
 
 /**
  * Returns a client response for VL2 mapping not found
@@ -124,12 +199,29 @@ function vl3NotFound() {
     };
 }
 
-
+function vnetRouteNotFound() {
+    return {
+        status: STATUS.SVP_S_NOTFOUND,
+        status_str: mod_types.statusString(STATUS.SVP_S_NOTFOUND),
+        prefixlen: 0,
+        r_dc_id: 0,
+        r_port: 0,
+        r_prefixlen: 0,
+        r_ul3_ip: '::',
+        r_vlan_id: 0,
+        r_vnet_id: 0,
+        vl2_dst_mac: '00:00:00:00:00:00',
+        vl2_src_mac: '00:00:00:00:00:00'
+    };
+}
 
 module.exports = {
     ping: reqPing,
     vl2: reqVL2,
     vl2NotFound: vl2NotFound,
     vl3: reqVL3,
-    vl3NotFound: vl3NotFound
+    vl3NotFound: vl3NotFound,
+    vlogs: reqVlogs,
+    vnetRoute: reqVnetRoute,
+    vnetRouteNotFound: vnetRouteNotFound
 };

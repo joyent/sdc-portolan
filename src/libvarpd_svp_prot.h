@@ -10,7 +10,7 @@
  */
 
 /*
- * Copyright 2015 Joyent, Inc.
+ * Copyright 2018 Joyent, Inc.
  */
 
 #ifndef _LIBVARPD_SVP_PROT_H
@@ -90,7 +90,6 @@ typedef struct svp_vl2_ack {
 	uint8_t		sl2a_addr[16];
 } svp_vl2_ack_t;
 
-
 /*
  * A client issues the SVP_R_VL3_REQ request whenever it needs to perform a
  * VL3->VL2 lookup.  Note, that this also implicitly performs a VL2->UL3 lookup
@@ -118,6 +117,32 @@ typedef struct svp_vl3_ack {
 	uint16_t	sl3a_uport;
 	uint8_t		sl3a_uip[16];
 } svp_vl3_ack_t;
+
+/*
+ * The client issues an SVP_R_ROUTE_REQ whenever it needs to learn which other
+ * fabrics it is attached to.
+ */
+typedef struct svp_route_req {
+    uint32_t    srr_vnetid;
+    uint16_t    srr_vlanid;
+    uint8_t     srr_pad [2];
+    uint8_t     srr_srcip [16];
+    uint8_t     srr_dstip [16];
+} svp_route_req_t;
+
+typedef struct svp_route_ack {
+    uint32_t    sra_status;
+    uint32_t    sra_dcid;
+    uint32_t    sra_vnetid;
+    uint16_t    sra_vlanid;
+    uint16_t    sra_port;
+    uint8_t     sra_ul3ip [16];
+    uint8_t     sra_vl2_srcmac [6];
+    uint8_t     sra_vl2_dstmac [6];
+    uint8_t     sra_src_prefixlen;
+    uint8_t     sra_dst_prefixlen;
+} svp_route_ack_t;
+
 
 /*
  * SVP_R_BULK_REQ requests a bulk dump of data. Currently we have two kinds of
@@ -154,21 +179,22 @@ typedef struct svp_bulk_ack {
  */
 typedef struct svp_log_req {
 	uint32_t	svlr_count;
-	uint8_t	svlr_ip[16];
+	uint8_t     svlr_ip[16];
 } svp_log_req_t;
 
 /*
  * The server replies to a log request by sending a series of log entries.
- * These log entries may be a mixture of both vl2 and vl3 records. The reply is
- * a stream of bytes after the status message whose length is determined baseed
- * on the header itself. Each entry begins with a uint32_t that describes its
- * type and then is followed by the remaining data payload. The next entry
- * follows immediately which again begins with the uint32_t word that describes
- * what it should be.
+ * These log entries may be a mixture of vl2, vl3, and route records. The reply
+ * is a stream of bytes after the status message whose length is determined
+ * based on the header itself. Each entry begins with a uint32_t that
+ * describes its type and then is followed by the remaining data payload. The
+ * next entry follows immediately which again begins with the uint32_t word
+ * that describes what it should be.
  */
 typedef enum svp_log_type {
-	SVP_LOG_VL2	= 0x01,
-	SVP_LOG_VL3	= 0x02
+	SVP_LOG_VL2     = 0x01,
+	SVP_LOG_VL3     = 0x02,
+	SVP_LOG_ROUTE   = 0x03
 } svp_log_type_t;
 
 typedef struct svp_log_vl2 {
@@ -187,6 +213,21 @@ typedef struct svp_log_vl3 {
 	uint16_t	svl3_vlan;
 	uint32_t	svl3_vnetid;
 } svp_log_vl3_t;
+
+typedef struct svp_log_route {
+    uint32_t    svlr_type;
+    uint8_t     svlr_id[16];
+    uint32_t    svlr_src_vnetid;
+    uint32_t    svlr_dst_vnetid;
+    uint32_t    svlr_dcid;
+    uint8_t     svlr_srcip[16];
+    uint8_t     svlr_dstip[16];
+    uint16_t    svlr_src_vlanid;
+    uint16_t    svlr_dst_vlanid;
+    uint8_t     svlr_src_prefixlen;
+    uint8_t     svlr_dst_prefixlen;
+    uint8_t     svlr_pad[2];
+} svp_log_route_t;
 
 typedef struct svp_log_ack {
 	uint32_t	svla_status;
