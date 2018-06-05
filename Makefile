@@ -5,7 +5,7 @@
 #
 
 #
-# Copyright (c) 2014, Joyent, Inc.
+# Copyright (c) 2018, Joyent, Inc.
 #
 
 NAME:=portolan
@@ -44,7 +44,7 @@ CTF_TYPES=-t svp_req_t \
 TAPE=node_modules/.bin/tape
 
 ifeq ($(shell uname -s),SunOS)
-	NODE_PREBUILT_VERSION=v0.10.32
+	NODE_PREBUILT_VERSION=v0.10.48
 	NODE_PREBUILT_TAG=zone
 	NODE_PREBUILT_IMAGE=de411e86-548d-11e4-a4b7-3bb60478632a
 endif
