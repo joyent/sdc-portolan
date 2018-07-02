@@ -414,8 +414,8 @@ PortolanCLI.prototype['do_vl3-lookup'] =
 
 PortolanCLI.prototype['do_vl3-lookup'].options = [
     OPTS.host,
-    OPTS.port,
     OPTS.ip,
+    OPTS.port,
     OPTS.vnet_id
 ];
 

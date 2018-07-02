@@ -124,7 +124,6 @@ function reqVnetRoute(t, opts) {
                 return t.end();
             }
 
-            // XXX: should we return an error code instead?
             if (Object.keys(res).length === 0) {
                 res = vnetRouteNotFound();
             }
@@ -162,8 +161,8 @@ function reqVlogs(t, opts) {
              */
             for (var i = 0; i < res.la_data.length; i++) {
                 var record = res.la_data[i];
-                t.assert(record.id && typeof (record.id) === 'string',
-                    'record id');
+                t.assert(record.id && typeof (record.id) === 'string' &&
+                    record.id.length > 0, 'record id');
                 delete res.la_data[i].id;
             }
 

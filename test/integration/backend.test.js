@@ -73,18 +73,6 @@ var ROUTES = [
         r_send_mac: '00:0a:95:ff:ff:ff'
     },
     {
-        net_uuid: '6f28a344-b0de-4216-b975-21a1f2e04e83',
-        vnet_id: 101010,
-        vlan_id: 10,
-        subnet: '192.168.100.0/24',
-        r_dc_id: 220,
-        r_net_uuid: 'f802a7ba-172a-40db-ba26-c853f9f0411c',
-        r_vnet_id: 202020,
-        r_vlan_id: 20,
-        r_subnet: '192.168.200.0/24',
-        r_send_mac: '00:0a:59:ff:ff:ff'
-    },
-    {
         net_uuid: '911dd15b-7fe1-479a-ae41-4fd5f83a0beb',
         vnet_id: 101010,
         vlan_id: 10,
@@ -104,10 +92,6 @@ var ROUTE_IPS = [
     {
         src: '192.168.111.1',
         dst: '192.168.222.1'
-    },
-    {
-        src: '192.168.100.1',
-        dst: '192.168.200.1'
     },
     {
         src: '192.168.100.1',
@@ -196,12 +180,6 @@ test('setup', function (t) {
         });
     });
 
-    t.test('add vnet route mapping 2', function (t2) {
-        mod_mapping.addVnetRoute(t2, {
-            params: ROUTES[2]
-        });
-    });
-
     t.test('add vl2 event mapping 0', function (t2) {
         mod_mapping.addEventMapping(t2, {
             type: 'SVP_LOG_VL2',
@@ -228,7 +206,6 @@ test('setup', function (t) {
 test('ping', function (t) {
     mod_req.ping(t);
 });
-
 
 test('vl2', function (t) {
 
@@ -339,22 +316,22 @@ test('vnetRoute', function (t) {
     t.test('vnet and vl3 mapping exists', function (t2) {
         mod_req.vnetRoute(t2, {
             params: {
-                vnet_id: ROUTES[2].vnet_id,
-                vlan_id: ROUTES[2].vlan_id,
-                srcip: ROUTE_IPS[2].src,
-                dstip: ROUTE_IPS[2].dst
+                vnet_id: ROUTES[1].vnet_id,
+                vlan_id: ROUTES[1].vlan_id,
+                srcip: ROUTE_IPS[1].src,
+                dstip: ROUTE_IPS[1].dst
             },
             exp: {
                 status: STATUS.SVP_S_OK,
                 status_str: mod_types.statusString(STATUS.SVP_S_OK),
-                r_dc_id: ROUTES[2].r_dc_id,
-                r_vnet_id: ROUTES[2].r_vnet_id,
-                r_vlan_id: ROUTES[2].r_vlan_id,
-                prefixlen: parseInt(ROUTES[2].subnet.split('/')[1], 10),
-                r_prefixlen: parseInt(ROUTES[2].r_subnet.split('/')[1], 10),
+                r_dc_id: ROUTES[1].r_dc_id,
+                r_vnet_id: ROUTES[1].r_vnet_id,
+                r_vlan_id: ROUTES[1].r_vlan_id,
+                prefixlen: parseInt(ROUTES[1].subnet.split('/')[1], 10),
+                r_prefixlen: parseInt(ROUTES[1].r_subnet.split('/')[1], 10),
                 r_port: CNS[0].port,
                 r_ul3_ip: mod_common.ipv4StrTov6(CNS[0].ip),
-                vl2_src_mac: ROUTES[2].r_send_mac,
+                vl2_src_mac: ROUTES[1].r_send_mac,
                 vl2_dst_mac: VMS[0].mac
             }
         });
@@ -365,8 +342,8 @@ test('vnetRoute', function (t) {
             params: {
                 vnet_id: 1111111111,
                 vlan_id: 9999,
-                srcip: ROUTE_IPS[2].src,
-                dstip: ROUTE_IPS[2].dst
+                srcip: ROUTE_IPS[1].src,
+                dstip: ROUTE_IPS[1].dst
             },
             exp: mod_req.vnetRouteNotFound()
         });
@@ -375,10 +352,10 @@ test('vnetRoute', function (t) {
     t.test('wrong source ip/subnet', function (t2) {
         mod_req.vnetRoute(t2, {
             params: {
-                vnet_id: ROUTES[2].vnet_id,
-                vlan_id: ROUTES[2].vlan_id,
+                vnet_id: ROUTES[1].vnet_id,
+                vlan_id: ROUTES[1].vlan_id,
                 srcip: '10.10.10.10',
-                dstip: ROUTE_IPS[2].dst
+                dstip: ROUTE_IPS[1].dst
             },
             exp: mod_req.vnetRouteNotFound()
         });
@@ -457,19 +434,19 @@ test('vnetRouteList', function (t) {
     t.test('vnetRouteList correct', function (t2) {
         mod_moray.listVnetRouteMappings({
             log: log,
-            net_uuid: ROUTES[2].net_uuid
+            net_uuid: ROUTES[1].net_uuid
         }, function (err, nets) {
             t2.ifErr(err, 'vnetRouteList Error');
             if (err) {
                 return t2.end();
             }
 
-            var exp = clone(ROUTES[2]);
+            var exp = clone(ROUTES[1]);
             exp.deleted = false;
             exp.version = 1;
-            exp.r_send_mac = mod_common.macToInt(ROUTES[2].r_send_mac);
-            exp.r_subnet = mod_common.cidrv4StrTov6(ROUTES[2].r_subnet);
-            exp.subnet = mod_common.cidrv4StrTov6(ROUTES[2].subnet);
+            exp.r_send_mac = mod_common.macToInt(ROUTES[1].r_send_mac);
+            exp.r_subnet = mod_common.cidrv4StrTov6(ROUTES[1].r_subnet);
+            exp.subnet = mod_common.cidrv4StrTov6(ROUTES[1].subnet);
 
             t2.deepEqual(nets, Array(exp));
 
@@ -505,12 +482,6 @@ test('remove mappings', function (t) {
     t.test('remove vnet route mapping 1', function (t2) {
         mod_mapping.removeVnetRoute(t2, {
             params: ROUTES[1]
-        });
-    });
-
-    t.test('remove vnet route mapping 2', function (t2) {
-        mod_mapping.removeVnetRoute(t2, {
-            params: ROUTES[2]
         });
     });
 });
