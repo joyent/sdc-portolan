@@ -63,7 +63,7 @@
 		] },
 		{ "name": "svp_vl3_req_t", "typedef": "struct svp_vl3_req" },
 		{ "name": "svp_vl3_ack_t", "typedef": "struct svp_vl3_ack" },
-        { "name": "struct svp_bulk_req", "struct": [
+		{ "name": "struct svp_bulk_req", "struct": [
 			{ "name": "svbr_type", "type": "uint32_t" }
 		] },
 		{ "name": "svp_bulk_req_t", "typedef": "struct svp_bulk_req" },

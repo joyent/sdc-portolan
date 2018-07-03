@@ -552,7 +552,6 @@ PortolanCLI.prototype['do_add-vnetroute'].options = [
     OPTS.r_net_uuid
 ];
 
-
 /**
  * Do a VNET Route lookup
  */
@@ -604,9 +603,6 @@ PortolanCLI.prototype['do_vnetroute-lookup'].options = [
     OPTS.srcip,
     OPTS.dstip
 ];
-
-// TODO: add vnetroute-remove
-
 
 /**
  * List all vnet routes for a given local network uuid
