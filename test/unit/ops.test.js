@@ -26,11 +26,17 @@ var test = require('tape');
 
 var CLIENT;
 var CONFIG = {
+    adminIp: process.env.ADMIN_IP || '127.0.0.1',
     backend: 'json',
+    datacenter: 'test-datacenter',
     host: 'localhost',
+    instanceUuid: 'test-instanceUuid',
     jsonDir: '/var/tmp/portolan-test-' + process.pid,
     logLevel: process.env.LOG_LEVEL || 'fatal',
-    port: 51302
+    metricsPort: process.env.metricsPort || 8882,
+    port: 51302,
+    serverUuid: 'test-serverUuid',
+    serviceName: 'portolan'
 };
 var SERVER;
 
@@ -79,6 +85,7 @@ test('ping', function (t) {
 test('teardown', function (t) {
     if (SERVER) {
         SERVER.close();
+        SERVER.metricsManager.close(function () {});
     }
 
     if (CLIENT) {

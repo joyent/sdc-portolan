@@ -18,7 +18,9 @@
         "moray": "3.4.2",
         "node-uuid": "1.4.2",
         "portolan-moray": "git+https://github.com/joyent/sdc-portolan-moray.git#7e2c4ca",
+        "restify": "^4.3.4",
         "tape": "3.0.3",
+        "triton-metrics": "0.2.0",
         "vasync": "1.6.2",
         "verror": "1.6.0",
         "vstream": "0.1.0"

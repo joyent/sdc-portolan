@@ -43,6 +43,7 @@ function getServer() {
  */
 function startServer(t) {
     config.log = mod_log.child({ component: 'server' });
+    console.log(config);
 
     mod_server.createServer(config, function _afterCreate(cErr, server) {
         t.ifErr(cErr, 'create server');
@@ -64,6 +65,7 @@ function stopServer(t) {
 
     if (SERVER) {
         SERVER.close();
+        SERVER.metricsManager.close(function () {});
         t.ok(true, 'Server closed');
     } else {
         t.ok(true, 'No server created: not closing');

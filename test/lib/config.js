@@ -26,13 +26,19 @@ assert.ok(process.env.MORAY_HOST,
  * Test server config
  */
 var SERVER_CONFIG = {
+    adminIp: process.env.ADMIN_IP || '127.0.0.1',
     backend: 'moray',
+    datacenter: 'test-datacenter',
+    instanceUuid: 'test-instanceUuid',
     logLevel: process.env.LOG_LEVEL || 'fatal',
+    metricsPort: process.env.metricsPort || 8882,
     moray: {
         host: process.env.MORAY_HOST,
         port: process.env.MORAY_PORT || 2020
     },
-    port: process.env.PORTOLAN_PORT || 1296
+    port: parseInt(process.env.PORTOLAN_PORT) || 1296,
+    serverUuid: 'test-serverUuid',
+    serviceName: 'portolan'
 };
 
 
