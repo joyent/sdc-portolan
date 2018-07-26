@@ -1,7 +1,7 @@
 {
     "name": "portolan",
     "description": "SDC Portolan service",
-    "version": "0.2.3",
+    "version": "0.2.0",
     "author": "Joyent (joyent.com)",
     "private": true,
     "dependencies": {
