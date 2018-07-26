@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (c) 2015, Joyent, Inc.
+ * Copyright (c) 2018, Joyent, Inc.
  */
 
 'use strict';
@@ -31,12 +31,12 @@ var SERVER_CONFIG = {
     datacenter: 'test-datacenter',
     instanceUuid: 'test-instanceUuid',
     logLevel: process.env.LOG_LEVEL || 'fatal',
-    metricsPort: process.env.metricsPort || 8882,
+    metricsPort: 8882,
     moray: {
         host: process.env.MORAY_HOST,
         port: process.env.MORAY_PORT || 2020
     },
-    port: parseInt(process.env.PORTOLAN_PORT) || 1296,
+    port: process.env.PORTOLAN_PORT || 1296,
     serverUuid: 'test-serverUuid',
     serviceName: 'portolan'
 };

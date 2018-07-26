@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (c) 2015, Joyent, Inc.
+ * Copyright (c) 2018, Joyent, Inc.
  */
 
 'use strict';
@@ -43,7 +43,7 @@ function getServer() {
  */
 function startServer(t) {
     config.log = mod_log.child({ component: 'server' });
-    console.log(config);
+    config.port = parseInt(config.port);
 
     mod_server.createServer(config, function _afterCreate(cErr, server) {
         t.ifErr(cErr, 'create server');

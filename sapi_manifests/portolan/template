@@ -10,7 +10,7 @@
     "port": 1296,
     "datacenter": "{{{datacenter_name}}}",
     "adminIp": "{{auto.ADMIN_IP}}",
-    "adminUuid": "{{{ufds_admin_uuid}}}",	
+    "adminUuid": "{{{ufds_admin_uuid}}}",
     "instanceUuid": "{{auto.ZONENAME}}",
     "serviceName": "{{SERVICE_NAME}}",
     "serverUuid": "{{auto.SERVER_UUID}}"
