@@ -190,7 +190,13 @@ PortolanCLI.prototype['do_add-overlay'] =
     }
 
     backendOpts.ip = mod_common.IPv6obj(backendOpts.ip);
-    backendOpts.mac = mod_common.macToInt(backendOpts.mac);
+
+    try {
+        backendOpts.mac = mod_common.macToInt(backendOpts.mac);
+    } catch (macErr) {
+        callback(macErr);
+        return;
+    }
 
     mod_backend.addOverlayMapping(backendOpts, callback);
 };

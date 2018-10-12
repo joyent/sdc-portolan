@@ -30,17 +30,28 @@ function addOverlayMapping(t, opts) {
     assert.string(opts.params.mac, 'opts.params.mac');
     assert.number(opts.params.vnet_id, 'opts.params.vnet_id');
 
+    var mac;
+
+    try {
+        mac = mod_common.macToInt(opts.params.mac);
+    } catch (macErr) {
+        t.ifErr(macErr, 'invalid mac addr');
+        t.end();
+        return;
+    }
+
     var val = {
         cn_uuid: opts.params.cn_uuid,
         ip: mod_common.IPv6obj(opts.params.ip),
-        mac: mod_common.macToInt(opts.params.mac),
+        mac: mac,
         vnet_id: opts.params.vnet_id,
         deleted: opts.params.deleted || false
     };
 
     mod_moray.addOverlayMapping(val, function _afterUnderlay(err) {
         t.ifErr(err, 'add overlay mapping');
-        return t.end();
+        t.end();
+        return;
     });
 }
 
