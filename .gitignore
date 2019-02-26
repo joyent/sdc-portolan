@@ -1,9 +1,11 @@
+/make_stamps
 /node_modules
 /tmp
+/bits
 /build
 /smf/manifests/portolan.xml
 .*.swp
-/portolan-pkg*.tar.bz2
+/portolan-pkg*.tar.gz
 /docs/*.html
 /docs/*.json
 .DS_Store
