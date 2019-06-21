@@ -44,9 +44,9 @@ CTF_TYPES=-t svp_req_t \
 TAPE=node_modules/.bin/tape
 
 ifeq ($(shell uname -s),SunOS)
-	NODE_PREBUILT_VERSION=v0.10.48
-	NODE_PREBUILT_TAG=zone
-	NODE_PREBUILT_IMAGE=de411e86-548d-11e4-a4b7-3bb60478632a
+	NODE_PREBUILT_VERSION=v6.17.0
+	NODE_PREBUILT_TAG=zone64
+	NODE_PREBUILT_IMAGE=c2c31b00-1d60-11e9-9a77-ff9f06554b0f
 endif
 
 ENGBLD_USE_BUILDIMAGE	= true
@@ -71,7 +71,8 @@ COMMIT=$(shell git describe --all --long  | awk -F'-g' '{print $$NF}')
 RELEASE_TARBALL:=$(NAME)-pkg-$(STAMP).tar.gz
 RELSTAGEDIR:=/tmp/$(NAME)-$(STAMP)
 
-BASE_IMAGE_UUID = de411e86-548d-11e4-a4b7-3bb60478632a
+# our base image is triton-origin-x86_64-18.4.0
+BASE_IMAGE_UUID = a9368831-958e-432d-a031-f8ce6768d190
 BUILDIMAGE_NAME = $(NAME)
 BUILDIMAGE_DESC	= SDC Portolan Service
 AGENTS		= amon config registrar
