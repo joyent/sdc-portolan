@@ -1,7 +1,7 @@
 {
     "name": "portolan",
     "description": "SDC Portolan service",
-    "version": "0.1.5",
+    "version": "0.2.0",
     "author": "Joyent (joyent.com)",
     "private": true,
     "dependencies": {
@@ -10,7 +10,7 @@
         "clone": "1.0.0",
         "cmdln": "3.0.1",
         "ctype": "0.5.3",
-        "dtrace-provider": "0.3.1",
+        "dtrace-provider": "0.8.7",
         "ipaddr.js": "0.1.6",
         "lomstream": "^1.1.0",
         "macaddr": "0.0.1",
