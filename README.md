@@ -5,14 +5,14 @@
 -->
 
 <!--
-    Copyright (c) 2016, Joyent, Inc.
+    Copyright 2019 Joyent, Inc.
 -->
 
 # sdc-portolan
 
 This repository is part of the Joyent Triton project. See the [contribution
-guidelines](https://github.com/joyent/triton/blob/master/CONTRIBUTING.md) --
-*Triton does not use GitHub PRs* -- and general documentation at the main
+guidelines](https://github.com/joyent/triton/blob/master/CONTRIBUTING.md)
+and general documentation at the main
 [Triton project](https://github.com/joyent/triton) page.
 
 Portolan is the service for looking up VXLAN underlay devices.
@@ -52,4 +52,3 @@ If you're not in the portolan zone, you can run an individual test by
 setting the `MORAY_HOST` environment variable:
 
     MORAY_HOST=10.99.99.17 node ./test/integration/backend.test.js
-
